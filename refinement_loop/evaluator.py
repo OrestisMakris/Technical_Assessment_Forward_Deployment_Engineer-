@@ -105,6 +105,47 @@ def evaluate(
     if scenario is None:
         raise ValueError(f"Unknown scenario_id: {transcript.scenario_id!r}")
 
+    # Handle empty transcripts (simulation failed)
+    if not transcript.turns:
+        logger.warning(
+            "Empty transcript for '%s' - simulation failed, returning low scores",
+            transcript.scenario_id,
+        )
+        return EvaluationResult(
+            scenario_id=transcript.scenario_id,
+            iteration=iteration,
+            scores=[
+                CriterionScore(
+                    name="understanding",
+                    score=0.0,
+                    rationale="No transcript available - simulation failed",
+                    failure_quote="",
+                ),
+                CriterionScore(
+                    name="api_usage",
+                    score=0.0,
+                    rationale="No transcript available - simulation failed",
+                    failure_quote="",
+                ),
+                CriterionScore(
+                    name="confirmation",
+                    score=0.0,
+                    rationale="No transcript available - simulation failed",
+                    failure_quote="",
+                ),
+                CriterionScore(
+                    name="naturalness",
+                    score=0.0,
+                    rationale="No transcript available - simulation failed",
+                    failure_quote="",
+                ),
+            ],
+            root_cause=RootCause.INSUFFICIENT_INFO,
+            root_cause_explanation="Simulation failed - ElevenLabs WebSocket connection timeout",
+            faulty_file=None,
+            faulty_behaviour=None,
+        )
+
     user_msg = _EVAL_USER.format(
         scenario_name=scenario.name,
         customer_goal=scenario.customer_goal,
