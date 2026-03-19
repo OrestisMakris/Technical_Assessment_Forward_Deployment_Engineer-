@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>TECHMELLON — LOOP OBSERVER</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --white:#ffffff;--black:#0a0a0a;--off:#f5f4f0;
+  --rule:rgba(10,10,10,.09);--rule-strong:rgba(10,10,10,.20);
+  --muted:#888;
+  --green:#1a7a4a;--green-bg:#eaf5ef;
+  --amber:#7a5000;--amber-bg:#fdf4df;
+  --red:#b02020;--red-bg:#fceaea;
+  --blue:#1a3d8a;--blue-bg:#eaf0fc;
+  --font-display:'Bebas Neue',sans-serif;
+  --font-body:'DM Sans',sans-serif;
+  --font-mono:'DM Mono',monospace;
+}
+html,body{height:100%;overflow:hidden}
+body{background:var(--white);color:var(--black);font-family:var(--font-body);font-size:13px;line-height:1.5}
+
+/* TICKER */
+.ticker{height:26px;background:var(--black);color:var(--white);display:flex;align-items:center;overflow:hidden;flex-shrink:0;}
+.ticker-inner{display:flex;white-space:nowrap;animation:tick 28s linear infinite;}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ti{padding:0 28px;font-family:var(--font-display);font-size:10.5px;letter-spacing:.13em;border-right:1px solid rgba(255,255,255,.15);}
+
+/* HEADER */
+header{height:50px;display:flex;align-items:stretch;border-bottom:1px solid var(--rule-strong);flex-shrink:0;}
+.brand{display:flex;align-items:center;padding:0 22px;border-right:1px solid var(--rule-strong);gap:8px;font-family:var(--font-display);font-size:19px;letter-spacing:.07em;}
+.brand-sub{font-family:var(--font-body);font-size:8.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:2px 6px;border:1px solid var(--rule-strong);}
+.steps{display:flex;align-items:stretch;flex:1;}
+.step{flex:1;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:12.5px;letter-spacing:.1em;border-right:1px solid var(--rule);color:var(--muted);position:relative;transition:color .2s;}
+.step::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--black);transform:scaleX(0);transition:transform .25s ease;}
+.step.active{color:var(--black);}
+.step.active::after{transform:scaleX(1);}
+.step.done{color:var(--black);opacity:.35;}
+.actions{display:flex;align-items:center;padding:0 18px;gap:10px;border-left:1px solid var(--rule-strong);}
+.dot{width:7px;height:7px;border-radius:50%;background:#ccc;transition:background .3s,box-shadow .3s;}
+.dot.running{background:var(--green);box-shadow:0 0 0 3px rgba(26,122,74,.15);}
+.dot.passed{background:var(--blue);}
+.dot.stopped{background:var(--red);}
+.st-label{font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);}
+.btn{font-family:var(--font-display);font-size:12.5px;letter-spacing:.1em;padding:0 16px;height:30px;background:var(--black);color:var(--white);border:none;cursor:pointer;transition:opacity .15s;}
+.btn:hover{opacity:.72}
+.btn:disabled{opacity:.32;cursor:not-allowed}
+
+/* LAYOUT */
+.main{display:grid;grid-template-columns:1fr 1px 370px 1px 290px;height:calc(100vh - 26px - 50px);overflow:hidden;}
+.vr{background:var(--rule-strong);}
+.panel{display:flex;flex-direction:column;overflow:hidden;}
+.ph{padding:0 18px;height:38px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--rule);flex-shrink:0;}
+.ph-label{font-family:var(--font-display);font-size:12px;letter-spacing:.1em;color:var(--muted);}
+.ph-meta{font-size:10px;color:var(--muted);letter-spacing:.04em;}
+.pb{flex:1;overflow-y:auto;padding:14px 18px;}
+
+/* PROGRESS */
+.prog{height:2px;background:var(--off);flex-shrink:0;}
+.prog-fill{height:100%;background:var(--black);transition:width .5s cubic-bezier(.4,0,.2,1);}
+
+/* FEED */
+.turn{margin-bottom:12px;animation:fu .22s ease both;}
+@keyframes fu{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.tl{font-family:var(--font-display);font-size:9.5px;letter-spacing:.15em;margin-bottom:3px;}
+.tl.customer{color:var(--blue);}
+.tl.agent{color:var(--black);}
+.tb{padding:9px 12px;font-size:12px;line-height:1.6;border:1px solid var(--rule);}
+.tb.agent{background:var(--off);}
+.feed-note{font-size:10px;color:var(--muted);margin:8px 0;padding-top:8px;border-top:1px solid var(--rule);font-style:italic;letter-spacing:.02em;}
+
+/* SUMMARY BAR */
+.sum{display:flex;align-items:stretch;border-top:1px solid var(--rule-strong);height:36px;flex-shrink:0;}
+.sc{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;border-right:1px solid var(--rule);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+.sc:last-child{border-right:none}
+.sv{font-family:var(--font-display);font-size:14px;letter-spacing:.02em;color:var(--black);}
+
+/* ITERATIONS */
+.iter-section{margin-bottom:22px;}
+.iter-head{font-family:var(--font-display);font-size:11px;letter-spacing:.12em;color:var(--muted);padding-bottom:6px;border-bottom:1px solid var(--rule);display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;}
+.big-score{font-family:var(--font-display);font-size:40px;line-height:1;letter-spacing:-.01em;}
+.big-score.pass{color:var(--green);}
+.big-score.warn{color:var(--amber);}
+.big-score.fail{color:var(--red);}
+.sc-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--rule);}
+.sc-cell{background:var(--white);padding:9px 10px;transition:background .12s;cursor:default;}
+.sc-cell:hover{background:var(--off);}
+.sc-name{font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sc-num{font-family:var(--font-display);font-size:21px;letter-spacing:-.01em;}
+.sc-num.pass{color:var(--green);}
+.sc-num.warn{color:var(--amber);}
+.sc-num.fail{color:var(--red);}
+.sc-cause{font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:1px;}
+
+/* CHANGES */
+.fix-block{margin-bottom:18px;}
+.fix-badge{font-family:var(--font-display);font-size:10.5px;letter-spacing:.12em;padding:3px 7px;display:inline-block;margin-bottom:6px;}
+.fix-badge.prompt{background:var(--black);color:var(--white);}
+.fix-badge.code{background:var(--amber-bg);color:var(--amber);}
+.fix-file{font-family:var(--font-mono);font-size:9.5px;color:var(--muted);margin-bottom:5px;}
+.fix-desc{font-size:11px;color:var(--muted);line-height:1.55;margin-bottom:8px;}
+.diff{font-family:var(--font-mono);font-size:10px;line-height:1.75;background:var(--off);padding:8px 10px;overflow-x:auto;border-left:2px solid var(--rule-strong);}
+.da{color:var(--green);display:block}
+.dr{color:var(--red);display:block;text-decoration:line-through;opacity:.65}
+.dm{color:var(--muted);display:block}
+.dc{color:var(--muted);display:block;opacity:.45}
+
+/* EMPTY */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:6px;}
+.ei{font-family:var(--font-display);font-size:44px;opacity:.13;letter-spacing:.04em;}
+.et{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);}
+
+/* SCROLL */
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--rule-strong)}
+</style>
+</head>
+<body>
+
+<div class="ticker">
+  <div class="ticker-inner">
+    <span class="ti">TECHMELLON AIRLINES</span><span class="ti">LOOP OBSERVER</span>
+    <span class="ti">SIMULATE</span><span class="ti">EVALUATE</span>
+    <span class="ti">FIX</span><span class="ti">PUSH</span>
+    <span class="ti">CLAUDE SONNET</span><span class="ti">ELEVENLABS CONVAI</span>
+    <span class="ti">AUTONOMOUS REFINEMENT</span><span class="ti">FW25 SYSTEM</span>
+    <span class="ti">TECHMELLON AIRLINES</span><span class="ti">LOOP OBSERVER</span>
+    <span class="ti">SIMULATE</span><span class="ti">EVALUATE</span>
+    <span class="ti">FIX</span><span class="ti">PUSH</span>
+    <span class="ti">CLAUDE SONNET</span><span class="ti">ELEVENLABS CONVAI</span>
+    <span class="ti">AUTONOMOUS REFINEMENT</span><span class="ti">FW25 SYSTEM</span>
+  </div>
+</div>
+
+<header>
+  <div class="brand">TECHMELLON <span class="brand-sub">OBSERVER</span></div>
+  <div class="steps">
+    <div class="step" id="s-simulate">SIMULATE</div>
+    <div class="step" id="s-evaluate">EVALUATE</div>
+    <div class="step" id="s-fix">FIX</div>
+    <div class="step" id="s-push">PUSH</div>
+  </div>
+  <div class="actions">
+    <div class="dot" id="dot"></div>
+    <div class="st-label" id="st-label">IDLE</div>
+    <button class="btn" id="start-btn" onclick="startLoop()">START LOOP</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- FEED -->
+  <div class="panel">
+    <div class="ph">
+      <span class="ph-label">LIVE FEED</span>
+      <span class="ph-meta" id="feed-meta"></span>
+    </div>
+    <div class="prog"><div class="prog-fill" id="pf1" style="width:0%"></div></div>
+    <div class="pb" id="feed">
+      <div class="empty"><div class="ei">TM</div><div class="et">Waiting for loop</div></div>
+    </div>
+    <div class="sum">
+      <div class="sc"><span class="sv" id="sv-iter">—</span>&nbsp;ITER</div>
+      <div class="sc"><span class="sv" id="sv-avg">—</span>&nbsp;/10 AVG</div>
+      <div class="sc"><span class="sv" id="sv-st">IDLE</span></div>
+    </div>
+  </div>
+
+  <div class="vr"></div>
+
+  <!-- ITERATIONS -->
+  <div class="panel">
+    <div class="ph">
+      <span class="ph-label">ITERATIONS</span>
+      <span class="ph-meta" id="iter-meta">0 / 5</span>
+    </div>
+    <div class="prog"><div class="prog-fill" id="pf2" style="width:0%"></div></div>
+    <div class="pb" id="iter-panel">
+      <div class="empty"><div class="ei">00</div><div class="et">No iterations yet</div></div>
+    </div>
+  </div>
+
+  <div class="vr"></div>
+
+  <!-- CHANGES -->
+  <div class="panel">
+    <div class="ph">
+      <span class="ph-label">CHANGES</span>
+      <span class="ph-meta" id="ch-meta">—</span>
+    </div>
+    <div class="pb" id="ch-panel">
+      <div class="empty"><div class="ei">Δ</div><div class="et">No changes yet</div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const MAX = 5;
+let es = null;
+
+function startLoop() {
+  document.getElementById('start-btn').disabled = true;
+  fetch('/loop/start',{method:'POST'}).then(r=>r.json())
+    .then(()=>connectSSE()).catch(()=>{document.getElementById('start-btn').disabled=false;});
+}
+
+function connectSSE() {
+  if (es) es.close();
+  es = new EventSource('/loop/stream');
+  ({loop_started:onStarted,step:onStep,scenario_start:onScenStart,scenario_done:onScenDone,
+    evaluation_complete:onEval,fixes_applied:onFixes,loop_finished:onFinished
+  });
+  const H={loop_started:onStarted,step:onStep,scenario_start:onScenStart,scenario_done:onScenDone,
+    evaluation_complete:onEval,fixes_applied:onFixes,loop_finished:onFinished};
+  Object.entries(H).forEach(([e,fn])=>es.addEventListener(e,ev=>fn(JSON.parse(ev.data))));
+  es.onerror=()=>setStatus('ERROR','stopped');
+}
+
+let scenCount=0,scenTotal=10;
+
+function onStarted(d){
+  setStatus('RUNNING','running');
+  scenTotal=d.scenario_count||10; scenCount=0;
+  document.getElementById('feed').innerHTML='';
+  document.getElementById('iter-panel').innerHTML='';
+  document.getElementById('ch-panel').innerHTML='<div class="empty"><div class="ei">Δ</div><div class="et">Awaiting first fix</div></div>';
+  document.getElementById('iter-meta').textContent='0 / '+MAX;
+  document.getElementById('sv-st').textContent='RUNNING';
+}
+
+function onStep(d){
+  document.getElementById('sv-iter').textContent=d.iteration;
+  document.getElementById('iter-meta').textContent=d.iteration+' / '+MAX;
+  setProgress(d.iteration,d.step);
+  highlight(d.step);
+}
+
+function onScenStart(d){
+  document.getElementById('feed-meta').textContent=d.scenario_name.toUpperCase();
+  document.getElementById('feed').innerHTML='';
+  scenCount=0;
+}
+
+function onScenDone(d){
+  scenCount++;
+  note('✓ '+d.scenario_id.replace(/_/g,' ')+' — '+d.turns+' turns');
+  document.getElementById('pf1').style.width=(scenCount/scenTotal*100)+'%';
+}
+
+function onEval(d){
+  const c=document.getElementById('iter-panel');
+  if(c.querySelector('.empty')) c.innerHTML='';
+  const avg=d.average,cls=avg>=8?'pass':avg>=5?'warn':'fail';
+  document.getElementById('sv-avg').textContent=avg.toFixed(1);
+  document.getElementById('pf2').style.width=(d.iteration/MAX*100)+'%';
+
+  let cells='';
+  for(const[sid,info] of Object.entries(d.scores)){
+    const sc=info.overall,cl=sc>=8?'pass':sc>=5?'warn':'fail';
+    cells+=`<div class="sc-cell"><div class="sc-name">${sid.replace(/_/g,' ')}</div><div class="sc-num ${cl}">${sc.toFixed(1)}</div><div class="sc-cause">${info.root_cause}</div></div>`;
+  }
+  const sec=document.createElement('div');
+  sec.className='iter-section';
+  sec.innerHTML=`<div class="iter-head"><span>ITERATION ${d.iteration}</span><span class="big-score ${cls}">${avg.toFixed(1)}</span></div><div class="sc-grid">${cells}</div>`;
+  c.prepend(sec);
+}
+
+function onFixes(d){
+  const p=document.getElementById('ch-panel');
+  p.innerHTML='';
+  if(!d.fixes||!d.fixes.length){
+    p.innerHTML='<div class="empty"><div class="ei">—</div><div class="et">No changes needed</div></div>';
+    document.getElementById('ch-meta').textContent='NO CHANGES';
+    return;
+  }
+  document.getElementById('ch-meta').textContent=d.fixes.length+' FIX'+(d.fixes.length>1?'ES':'');
+  d.fixes.forEach(f=>{
+    const b=document.createElement('div');
+    b.className='fix-block';
+    const file=f.target_file?`<div class="fix-file">${esc(f.target_file)}</div>`:'';
+    const diff=f.diff?`<div class="diff">${renderDiff(f.diff)}</div>`:'';
+    b.innerHTML=`<span class="fix-badge ${f.type}">${f.type.toUpperCase()}</span>${file}<div class="fix-desc">${esc(f.description)}</div>${diff}`;
+    p.appendChild(b);
+  });
+}
+
+function onFinished(d){
+  const l=d.reason==='passed'?'PASSED':'MAX ITER';
+  setStatus(l,d.reason==='passed'?'passed':'stopped');
+  document.getElementById('start-btn').disabled=false;
+  document.getElementById('start-btn').textContent='RUN AGAIN';
+  document.getElementById('sv-st').textContent=l;
+  note('Loop finished · '+d.reason+' · '+d.total_iterations+' iter · avg '+d.final_average_score+'/10');
+  if(es){es.close();es=null;}
+}
+
+function setStatus(label,cls){
+  document.getElementById('st-label').textContent=label;
+  document.getElementById('dot').className='dot '+(cls||'');
+}
+
+function note(t){
+  const f=document.getElementById('feed');
+  const e=document.createElement('div');
+  e.className='feed-note';e.textContent=t;
+  f.appendChild(e);f.scrollTop=f.scrollHeight;
+}
+
+window.appendTurn=function(role,text){
+  const f=document.getElementById('feed');
+  const d=document.createElement('div');
+  d.className='turn';
+  d.innerHTML=`<div class="tl ${role}">${role.toUpperCase()}</div><div class="tb ${role}">${esc(text)}</div>`;
+  f.appendChild(d);f.scrollTop=f.scrollHeight;
+};
+
+function highlight(step){
+  ['simulate','evaluate','fix','push'].forEach(s=>{
+    const e=document.getElementById('s-'+s);
+    e.classList.toggle('active',s===step);
+  });
+}
+
+function setProgress(iter,step){
+  const steps=['simulate','evaluate','fix','push'];
+  const si=steps.indexOf(step);
+  const pct=((iter-1+(si+1)/steps.length)/MAX)*100;
+  document.getElementById('pf1').style.width=Math.min(pct,100)+'%';
+}
+
+function renderDiff(text){
+  return text.split('\n').map(l=>{
+    if(l.startsWith('+')&&!l.startsWith('+++')) return `<span class="da">${esc(l)}</span>`;
+    if(l.startsWith('-')&&!l.startsWith('---')) return `<span class="dr">${esc(l)}</span>`;
+    if(l.startsWith('@@')||l.startsWith('---')||l.startsWith('+++')) return `<span class="dm">${esc(l)}</span>`;
+    return `<span class="dc">${esc(l)}</span>`;
+  }).join('');
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  fetch('/loop/status').then(r=>r.json()).then(d=>{
+    if(d.status==='running'){setStatus('RUNNING','running');connectSSE();}
+  }).catch(()=>{});
+});
+</script>
+</body>
+</html>

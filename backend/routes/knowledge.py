@@ -1,0 +1,247 @@
+"""
+knowledge.py — policy query endpoints AND the ElevenLabs webhook handler.
+
+ElevenLabs calls webhooks during a conversation when the agent invokes a tool.
+The webhook receives a JSON body with the tool name and parameters, and must
+return a JSON response the agent reads aloud / uses to continue the call.
+
+All booking + flight operations are routed through the same underlying
+route handlers so the agent always gets consistent data.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+from pathlib import Path
+from typing import Any
+
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import JSONResponse
+
+logger = logging.getLogger(__name__)
+
+POLICIES_FILE = Path(__file__).parent / "policies.json"
+_policies: dict = {}
+
+
+def _load_policies() -> dict:
+    global _policies
+    if not _policies:
+        _policies = json.loads(POLICIES_FILE.read_text(encoding="utf-8"))
+    return _policies
+
+
+knowledge_router = APIRouter(prefix="/knowledge", tags=["knowledge"])
+webhook_router = APIRouter(prefix="/webhook", tags=["webhook"])
+
+
+# ── Knowledge endpoints ───────────────────────────────────────────────────────
+
+@knowledge_router.get("/pet-policy")
+def get_pet_policy():
+    return _load_policies()["pet_policy"]
+
+@knowledge_router.get("/baggage-policy")
+def get_baggage_policy():
+    return _load_policies()["baggage_policy"]
+
+@knowledge_router.get("/checkin-policy")
+def get_checkin_policy():
+    return _load_policies()["checkin_policy"]
+
+@knowledge_router.get("/cancellation-policy")
+def get_cancellation_policy():
+    return _load_policies()["cancellation_refund_policy"]
+
+@knowledge_router.get("/assistance-policy")
+def get_assistance_policy():
+    return _load_policies()["special_assistance"]
+
+@knowledge_router.get("/infant-child-policy")
+def get_infant_child_policy():
+    return _load_policies()["infant_and_child_policy"]
+
+@knowledge_router.get("/seat-policy")
+def get_seat_policy():
+    return _load_policies()["seat_policy"]
+
+@knowledge_router.get("/loyalty-program")
+def get_loyalty_program():
+    return _load_policies()["loyalty_program"]
+
+@knowledge_router.get("/meals-onboard")
+def get_meals_onboard():
+    return _load_policies()["meal_and_onboard_policy"]
+
+@knowledge_router.get("/travel-documents")
+def get_travel_documents():
+    return _load_policies()["travel_documents_policy"]
+
+@knowledge_router.get("/disruption-policy")
+def get_disruption_policy():
+    return _load_policies()["flight_disruption_policy"]
+
+@knowledge_router.get("/payment-policy")
+def get_payment_policy():
+    return _load_policies()["payment_policy"]
+
+@knowledge_router.get("/group-booking")
+def get_group_booking():
+    return _load_policies()["group_booking_policy"]
+
+@knowledge_router.get("/medical-fitness")
+def get_medical_fitness():
+    return _load_policies()["medical_fitness_policy"]
+
+@knowledge_router.get("/environmental-policy")
+def get_environmental_policy():
+    return _load_policies()["environmental_policy"]
+
+
+@knowledge_router.get("/{topic}")
+def get_policy(topic: str):
+    policies = _load_policies()
+    key = topic.replace("-", "_")
+    if key not in policies:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Policy '{topic}' not found. Available: {list(policies.keys())}",
+        )
+    return {"topic": key, "content": policies[key]}
+
+
+# ── ElevenLabs webhook handler ────────────────────────────────────────────────
+#
+# ElevenLabs POSTs to this endpoint when the agent calls a tool.
+# Body format:
+#   {
+#     "tool_name": "search_flights",
+#     "tool_call_id": "...",
+#     "parameters": { ... }
+#   }
+#
+# We dispatch to the appropriate business logic and return:
+#   { "result": <any JSON-serialisable value> }
+
+@webhook_router.post("/elevenlabs")
+async def elevenlabs_webhook(request: Request) -> JSONResponse:
+    """
+    Central dispatcher for all ElevenLabs tool calls.
+    Maps tool_name → handler function.
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON body.")
+
+    tool_name: str = body.get("tool_name", "")
+    params: dict = body.get("parameters", {})
+
+    logger.info("ElevenLabs webhook: tool=%s params=%s", tool_name, params)
+
+    handler = _TOOL_DISPATCH.get(tool_name)
+    if handler is None:
+        logger.warning("Unknown tool: %s", tool_name)
+        return JSONResponse({"result": f"Tool '{tool_name}' is not available."}, status_code=200)
+
+    try:
+        result = await handler(params)
+        return JSONResponse({"result": result})
+    except HTTPException as exc:
+        return JSONResponse({"result": {"error": exc.detail}}, status_code=200)
+    except Exception as exc:
+        logger.exception("Webhook handler error for tool '%s'", tool_name)
+        return JSONResponse({"result": {"error": str(exc)}}, status_code=200)
+
+
+# ── Tool handlers ─────────────────────────────────────────────────────────────
+
+async def _tool_search_flights(params: dict) -> Any:
+    from backend.routes.flights import search_flights
+    return [f.model_dump() for f in search_flights(
+        destination=params.get("destination"),
+        origin=params.get("origin", "London"),
+        date=params.get("date"),
+        cheapest=params.get("cheapest", False),
+        seat_class=params.get("seat_class"),
+    )]
+
+
+async def _tool_book_flight(params: dict) -> Any:
+    from backend.db.schemas import BookingCreateRequest
+    from backend.routes.bookings import create_booking
+    req = BookingCreateRequest(
+        flight_id=params["flight_id"],
+        passenger_name=params["passenger_name"],
+        seat_preference=params.get("seat_preference"),
+        fare_type=params.get("fare_type", "standard"),
+    )
+    booking = create_booking(req)
+    return booking.model_dump()
+
+
+async def _tool_get_booking(params: dict) -> Any:
+    from backend.routes.bookings import get_booking
+    booking = get_booking(params["ref"])
+    return booking.model_dump()
+
+
+async def _tool_cancel_booking(params: dict) -> Any:
+    from backend.routes.bookings import cancel_booking
+    return cancel_booking(params["ref"])
+
+
+async def _tool_reschedule_booking(params: dict) -> Any:
+    from backend.db.schemas import BookingRescheduleRequest
+    from backend.routes.bookings import reschedule_booking
+    req = BookingRescheduleRequest(new_flight_id=params["new_flight_id"])
+    booking = reschedule_booking(params["ref"], req)
+    return booking.model_dump()
+
+
+async def _tool_add_extras(params: dict) -> Any:
+    from backend.db.schemas import ExtraAddRequest
+    from backend.routes.bookings import add_extras
+    req = ExtraAddRequest(
+        item_type=params["item_type"],
+        description=params.get("description"),
+    )
+    booking = add_extras(params["ref"], req)
+    return booking.model_dump()
+
+
+async def _tool_add_assistance(params: dict) -> Any:
+    from backend.db.schemas import AssistanceRequest
+    from backend.routes.bookings import add_assistance
+    req = AssistanceRequest(
+        assistance_code=params["assistance_code"],
+        notes=params.get("notes"),
+    )
+    booking = add_assistance(params["ref"], req)
+    return booking.model_dump()
+
+
+async def _tool_flight_status(params: dict) -> Any:
+    from backend.routes.flights import get_flight_status
+    return get_flight_status(params["flight_id"]).model_dump()
+
+
+async def _tool_get_policy(params: dict) -> Any:
+    topic = params.get("topic", "")
+    policies = _load_policies()
+    key = topic.replace("-", "_")
+    return policies.get(key, {"error": f"Policy '{topic}' not found."})
+
+
+_TOOL_DISPATCH = {
+    "search_flights": _tool_search_flights,
+    "book_flight": _tool_book_flight,
+    "get_booking": _tool_get_booking,
+    "cancel_booking": _tool_cancel_booking,
+    "reschedule_booking": _tool_reschedule_booking,
+    "add_extras": _tool_add_extras,
+    "add_assistance": _tool_add_assistance,
+    "get_flight_status": _tool_flight_status,
+    "get_policy": _tool_get_policy,
+}

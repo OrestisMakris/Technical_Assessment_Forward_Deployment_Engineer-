@@ -1,0 +1,377 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--off:#f5f4f0;--black:#0a0a0a;--muted:#888;
+  --rule:rgba(10,10,10,.09);--rule-s:rgba(10,10,10,.18);
+  --green:#1a7a4a;--green-bg:#eaf5ef;
+  --amber:#7a5000;--amber-bg:#fdf4df;
+  --red:#b02020;--red-bg:#fceaea;
+  --blue:#1a3d8a;--blue-bg:#eaf0fc;
+  --mono:'DM Mono','Fira Code',monospace;
+  --display:'Bebas Neue',Impact,sans-serif;
+  --body:'DM Sans','Helvetica Neue',sans-serif;
+}
+body{font-family:var(--body);font-size:13px;color:var(--black);background:var(--bg);padding:0 0 24px}
+
+.ticker{background:var(--black);color:#fff;height:24px;display:flex;align-items:center;overflow:hidden;margin-bottom:0}
+.ticker-inner{display:flex;white-space:nowrap;animation:tick 20s linear infinite}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ti{padding:0 24px;font-size:9.5px;letter-spacing:.14em;border-right:1px solid rgba(255,255,255,.14)}
+
+.page-head{padding:16px 20px 12px;border-bottom:1px solid var(--rule-s);display:flex;align-items:baseline;justify-content:space-between}
+.page-title{font-family:var(--display);font-size:22px;letter-spacing:.06em}
+.page-sub{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+
+.steps{padding:0 20px}
+
+.step{border-bottom:1px solid var(--rule);padding:14px 0}
+.step:last-child{border-bottom:none}
+
+.step-head{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+.step-num{font-family:var(--display);font-size:28px;letter-spacing:-.01em;color:var(--muted);line-height:1;min-width:28px}
+.step-num.done{color:var(--green)}
+.step-num.active{color:var(--black)}
+.step-info{flex:1}
+.step-title{font-size:12px;font-weight:500;letter-spacing:.04em;text-transform:uppercase}
+.step-desc{font-size:11px;color:var(--muted);margin-top:2px}
+.step-check{width:18px;height:18px;border:1px solid var(--rule-s);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--green);flex-shrink:0;transition:background .15s,border-color .15s}
+.step-check.done{background:var(--green-bg);border-color:var(--green);color:var(--green)}
+
+.step-body{padding-left:38px;margin-top:10px}
+
+.code-block{background:var(--off);padding:10px 12px;font-family:var(--mono);font-size:11px;line-height:1.7;border-left:2px solid var(--rule-s);position:relative;margin-bottom:8px;overflow-x:auto}
+.copy-btn{position:absolute;top:6px;right:8px;font-family:var(--body);font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border:1px solid var(--rule-s);background:var(--bg);cursor:pointer;transition:background .12s}
+.copy-btn:hover{background:var(--off)}
+.copy-btn.ok{color:var(--green);border-color:var(--green);background:var(--green-bg)}
+
+.note{font-size:11px;line-height:1.6;color:var(--muted);margin-bottom:8px;padding:8px 10px;border-left:2px solid var(--rule-s)}
+.note.warn{border-left-color:var(--amber);background:var(--amber-bg);color:var(--amber)}
+.note.good{border-left-color:var(--green);background:var(--green-bg);color:var(--green)}
+.note.info{border-left-color:var(--blue);background:var(--blue-bg);color:var(--blue)}
+
+.env-table{width:100%;border-collapse:collapse;margin-bottom:8px;font-size:11px}
+.env-table tr{border-bottom:1px solid var(--rule)}
+.env-table td{padding:5px 8px;font-family:var(--mono)}
+.env-table td:first-child{color:var(--blue);font-size:10px;width:200px}
+.env-table td:last-child{color:var(--muted);font-size:10px}
+
+.tag{display:inline-block;font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:1px 6px;margin-right:4px;vertical-align:middle}
+.tag.optional{background:var(--off);color:var(--muted)}
+.tag.required{background:var(--red-bg);color:var(--red)}
+.tag.auto{background:var(--green-bg);color:var(--green)}
+
+.progress-bar{height:2px;background:var(--off);margin:12px 20px 0}
+.progress-fill{height:100%;background:var(--black);transition:width .4s ease;width:0%}
+
+.summary{margin:16px 20px 0;padding:12px 14px;border:1px solid var(--rule-s);display:flex;align-items:center;gap:14px}
+.sum-big{font-family:var(--display);font-size:32px;line-height:1;color:var(--green)}
+.sum-label{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+</style>
+
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500&family=DM+Mono&display=swap" rel="stylesheet"/>
+
+<div class="ticker">
+  <div class="ticker-inner">
+    <span class="ti">HOW TO RUN</span><span class="ti">TECHMELLON LOOP</span>
+    <span class="ti">CLONE</span><span class="ti">ENV</span><span class="ti">INSTALL</span>
+    <span class="ti">SEED DB</span><span class="ti">START API</span><span class="ti">OPEN UI</span>
+    <span class="ti">HOW TO RUN</span><span class="ti">TECHMELLON LOOP</span>
+    <span class="ti">CLONE</span><span class="ti">ENV</span><span class="ti">INSTALL</span>
+    <span class="ti">SEED DB</span><span class="ti">START API</span><span class="ti">OPEN UI</span>
+  </div>
+</div>
+
+<div class="page-head">
+  <div class="page-title">RUN GUIDE</div>
+  <div class="page-sub">Click each step to expand</div>
+</div>
+
+<div class="progress-bar"><div class="progress-fill" id="prog"></div></div>
+
+<div class="steps" id="steps">
+
+  <!-- STEP 1 -->
+  <div class="step" id="step-1">
+    <div class="step-head" onclick="toggle(1)">
+      <div class="step-num" id="num-1">01</div>
+      <div class="step-info">
+        <div class="step-title">Clone & structure</div>
+        <div class="step-desc">Get the repo ready with the right layout</div>
+      </div>
+      <div class="step-check" id="chk-1" onclick="event.stopPropagation();mark(1)">✓</div>
+    </div>
+    <div class="step-body" id="body-1" style="display:none">
+      <div class="note info">All files from this session go inside one project root. The structure below must match exactly for imports to work.</div>
+      <div class="code-block">
+<button class="copy-btn" onclick="cp(this)">copy</button>mkdir techmellon-fde && cd techmellon-fde
+
+# expected layout:
+techmellon-fde/
+├── backend/
+│   ├── __init__.py
+│   ├── main.py
+│   ├── db/
+│   │   ├── __init__.py
+│   │   ├── database.py
+│   │   └── schemas.py
+│   ├── routes/
+│   │   ├── __init__.py
+│   │   ├── flights.py
+│   │   ├── bookings.py
+│   │   └── knowledge.py
+│   ├── knowledge/
+│   │   └── policies.json
+│   └── static/
+│       └── index.html
+├── refinement_loop/
+│   ├── __init__.py
+│   ├── config.py
+│   ├── models.py
+│   ├── scenarios.py
+│   ├── simulator.py
+│   ├── evaluator.py
+│   ├── fixer.py
+│   ├── elevenlabs_client.py
+│   ├── loop.py
+│   └── sse_bridge.py
+├── prompts/
+│   └── system_prompt.txt
+├── logs/
+└── requirements.txt</div>
+      <div class="note">All files were generated in this session — copy each one from the outputs panel into the matching path.</div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step" id="step-2">
+    <div class="step-head" onclick="toggle(2)">
+      <div class="step-num" id="num-2">02</div>
+      <div class="step-info">
+        <div class="step-title">Set environment variables</div>
+        <div class="step-desc">API keys and agent ID — required before anything runs</div>
+      </div>
+      <div class="step-check" id="chk-2" onclick="event.stopPropagation();mark(2)">✓</div>
+    </div>
+    <div class="step-body" id="body-2" style="display:none">
+      <table class="env-table">
+        <tr><td>GOOGLE_API_KEY</td><td><span class="tag required">required</span> aistudio.google.com → API Keys</td></tr>
+        <tr><td>ELEVENLABS_API_KEY</td><td><span class="tag required">required</span> elevenlabs.io → Profile → API Key</td></tr>
+        <tr><td>ELEVENLABS_AGENT_ID</td><td><span class="tag required">required</span> ElevenLabs → Conversational AI → your agent ID</td></tr>
+        <tr><td>MAX_ITERATIONS</td><td><span class="tag optional">optional</span> default: 5</td></tr>
+        <tr><td>PASS_THRESHOLD</td><td><span class="tag optional">optional</span> default: 8.0</td></tr>
+        <tr><td>DB_PATH</td><td><span class="tag optional">optional</span> default: techmellon.db (project root)</td></tr>
+      </table>
+      <div class="code-block">
+<button class="copy-btn" onclick="cp(this)">copy</button>export GOOGLE_API_KEY=AIzaSy...
+export ELEVENLABS_API_KEY=sk_...
+export ELEVENLABS_AGENT_ID=agent_...
+
+# optional overrides for the walkthrough demo:
+export MAX_ITERATIONS=3
+export PASS_THRESHOLD=7.0</div>
+      <div class="note warn">If ELEVENLABS_AGENT_ID is not set, the system falls back to Gemini acting as the agent directly. The loop still runs — useful for testing without ElevenLabs access.</div>
+      <div class="note info">For ElevenLabs: create an agent at elevenlabs.io → Conversational AI → New Agent. Set the webhook URL to http://your-host:8000/webhook/elevenlabs and add the tools listed in the system prompt.</div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step" id="step-3">
+    <div class="step-head" onclick="toggle(3)">
+      <div class="step-num" id="num-3">03</div>
+      <div class="step-info">
+        <div class="step-title">Install dependencies</div>
+        <div class="step-desc">Python 3.11+ recommended</div>
+      </div>
+      <div class="step-check" id="chk-3" onclick="event.stopPropagation();mark(3)">✓</div>
+    </div>
+    <div class="step-body" id="body-3" style="display:none">
+      <div class="code-block">
+<button class="copy-btn" onclick="cp(this)">copy</button>cd techmellon-fde
+
+# create a virtual environment (recommended)
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+
+pip install -r requirements.txt</div>
+      <div class="note good">requirements.txt contains: fastapi, uvicorn[standard], pydantic>=2.7, google-generativeai>=0.4, httpx, websockets</div>
+      <div class="code-block">
+<button class="copy-btn" onclick="cp(this)">copy</button># verify install
+python -c "import fastapi, google.generativeai as genai, websockets; print('all good')"</div>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="step" id="step-4">
+    <div class="step-head" onclick="toggle(4)">
+      <div class="step-num" id="num-4">04</div>
+      <div class="step-info">
+        <div class="step-title">Add static file serving</div>
+        <div class="step-desc">One-line addition to backend/main.py</div>
+      </div>
+      <div class="step-check" id="chk-4" onclick="event.stopPropagation();mark(4)">✓</div>
+    </div>
+    <div class="step-body" id="body-4" style="display:none">
+      <div class="note warn">The generated main.py is missing this one line — add it to serve the UI from the API server.</div>
+      <div class="code-block">
+<button class="copy-btn" onclick="cp(this)">copy</button># in backend/main.py, after all app.include_router() calls, add:
+from fastapi.staticfiles import StaticFiles
+app.mount("/", StaticFiles(directory="backend/static", html=True), name="static")</div>
+      <div class="note">This mounts index.html at / so http://localhost:8000 opens the observer UI directly. The API routes (/flights, /bookings, etc.) still work because they're registered first.</div>
+    </div>
+  </div>
+
+  <!-- STEP 5 -->
+  <div class="step" id="step-5">
+    <div class="step-head" onclick="toggle(5)">
+      <div class="step-num" id="num-5">05</div>
+      <div class="step-info">
+        <div class="step-title">Start the server</div>
+        <div class="step-desc">Seeds the DB automatically on first boot</div>
+      </div>
+      <div class="step-check" id="chk-5" onclick="event.stopPropagation();mark(5)">✓</div>
+    </div>
+    <div class="step-body" id="body-5" style="display:none">
+      <div class="code-block">
+<button class="copy-btn" onclick="cp(this)">copy</button>cd techmellon-fde
+uvicorn backend.main:app --reload --port 8000</div>
+      <div class="note good">On first boot you'll see: "Database initialised." — this seeds 35 flights and 5 fixed bookings (the ones referenced in the assessment scenarios).</div>
+      <div class="note">The --reload flag means uvicorn watches for file changes. When the fixer patches a Python file, it sends SIGHUP to reload without a full restart.</div>
+      <div class="code-block">
+<button class="copy-btn" onclick="cp(this)">copy</button># verify the API is up:
+curl http://localhost:8000/
+# → {"service":"TechMellon Airlines API","docs":"/docs","loop_stream":"/loop/stream"}
+
+curl http://localhost:8000/flights/search?destination=Tokyo
+# → list of available Tokyo flights</div>
+    </div>
+  </div>
+
+  <!-- STEP 6 -->
+  <div class="step" id="step-6">
+    <div class="step-head" onclick="toggle(6)">
+      <div class="step-num" id="num-6">06</div>
+      <div class="step-info">
+        <div class="step-title">Open the observer UI</div>
+        <div class="step-desc">The Scuffers-inspired loop dashboard</div>
+      </div>
+      <div class="step-check" id="chk-6" onclick="event.stopPropagation();mark(6)">✓</div>
+    </div>
+    <div class="step-body" id="body-6" style="display:none">
+      <div class="code-block">open http://localhost:8000</div>
+      <div class="note info">You'll see the black ticker, the SIMULATE / EVALUATE / FIX / PUSH step tabs, and three panels. Everything is idle until you click START LOOP.</div>
+    </div>
+  </div>
+
+  <!-- STEP 7 -->
+  <div class="step" id="step-7">
+    <div class="step-head" onclick="toggle(7)">
+      <div class="step-num" id="num-7">07</div>
+      <div class="step-info">
+        <div class="step-title">Run the loop</div>
+        <div class="step-desc">Via UI button or curl</div>
+      </div>
+      <div class="step-check" id="chk-7" onclick="event.stopPropagation();mark(7)">✓</div>
+    </div>
+    <div class="step-body" id="body-7" style="display:none">
+      <div class="note info">Option A — click START LOOP in the UI. The loop runs in the background; the UI streams live via SSE.</div>
+      <div class="code-block">
+<button class="copy-btn" onclick="cp(this)">copy</button># Option B — curl (all 10 scenarios):
+curl -X POST http://localhost:8000/loop/start
+
+# Option C — specific scenarios only:
+curl -X POST http://localhost:8000/loop/start \
+  -H "Content-Type: application/json" \
+  -d '["book_next_available","cancel_refund","pet_policy"]'
+
+# Option D — CLI directly (bypasses FastAPI):
+python -m refinement_loop.loop --max-iterations 3 --pass-threshold 7.0</div>
+      <div class="note warn">The loop runs all 10 scenarios per iteration. With ElevenLabs WS + Claude evals, each iteration takes ~3–5 minutes. In fallback mode (no ElevenLabs), ~1–2 minutes.</div>
+      <div class="note good">Logs are written to logs/run_YYYYMMDD_HHMMSS.json automatically after each run. The final system prompt is saved to prompts/system_prompt.txt.</div>
+    </div>
+  </div>
+
+  <!-- STEP 8 -->
+  <div class="step" id="step-8">
+    <div class="step-head" onclick="toggle(8)">
+      <div class="step-num" id="num-8">08</div>
+      <div class="step-info">
+        <div class="step-title">Walkthrough demo adjustments</div>
+        <div class="step-desc">Commands the interviewer will likely ask for</div>
+      </div>
+      <div class="step-check" id="chk-8" onclick="event.stopPropagation();mark(8)">✓</div>
+    </div>
+    <div class="step-body" id="body-8" style="display:none">
+      <div class="code-block">
+<button class="copy-btn" onclick="cp(this)">copy</button># Change pass threshold live (restart server):
+PASS_THRESHOLD=6.0 uvicorn backend.main:app --reload --port 8000
+
+# Change max iterations live:
+MAX_ITERATIONS=2 uvicorn backend.main:app --reload --port 8000
+
+# Reset the database and re-seed:
+rm techmellon.db
+uvicorn backend.main:app --reload --port 8000  # seeds fresh on boot
+
+# Check what's in the DB:
+sqlite3 techmellon.db "SELECT ref, passenger_name, status FROM bookings;"
+sqlite3 techmellon.db "SELECT id, destination, seats_booked, seats_total FROM flights LIMIT 10;"
+
+# View the current system prompt:
+cat prompts/system_prompt.txt
+
+# Stream loop events manually (without the UI):
+curl -N http://localhost:8000/loop/stream
+
+# Check loop status:
+curl http://localhost:8000/loop/status</div>
+      <div class="note good">The API docs are at http://localhost:8000/docs — fully interactive, great to show during the walkthrough.</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="summary" id="summary" style="display:none">
+  <div class="sum-big" id="sum-count">0</div>
+  <div><div class="sum-label">steps complete</div><div style="font-size:11px;color:var(--muted);margin-top:3px">Ready to run</div></div>
+</div>
+
+<script>
+const total = 8;
+let done = new Set();
+
+function toggle(n) {
+  const b = document.getElementById('body-'+n);
+  const num = document.getElementById('num-'+n);
+  const open = b.style.display !== 'none';
+  document.querySelectorAll('.step-body').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.step-num').forEach(el => { if(!done.has(parseInt(el.id.split('-')[1]))) el.style.color = 'var(--muted)'; });
+  if (!open) {
+    b.style.display = 'block';
+    num.style.color = 'var(--black)';
+  }
+}
+
+function mark(n) {
+  if (done.has(n)) { done.delete(n); } else { done.add(n); }
+  const chk = document.getElementById('chk-'+n);
+  const num = document.getElementById('num-'+n);
+  chk.className = 'step-check' + (done.has(n) ? ' done' : '');
+  num.className = 'step-num' + (done.has(n) ? ' done' : '');
+  num.style.color = '';
+  const pct = (done.size / total) * 100;
+  document.getElementById('prog').style.width = pct + '%';
+  document.getElementById('sum-count').textContent = done.size + '/' + total;
+  document.getElementById('summary').style.display = done.size > 0 ? 'flex' : 'none';
+}
+
+function cp(btn) {
+  const code = btn.parentElement.textContent.replace('copy','').trim();
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = 'copied'; btn.classList.add('ok');
+    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('ok'); }, 1500);
+  });
+}
+
+toggle(1);
+</script>
