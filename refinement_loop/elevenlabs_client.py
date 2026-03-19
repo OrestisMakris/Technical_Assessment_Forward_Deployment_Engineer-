@@ -115,6 +115,7 @@ _WS_URL = (
 
 async def _send_user_turn(ws, text: str) -> None:
     """Inject a customer utterance as text into the ElevenLabs WS session."""
+    logger.info("Sending user turn: %s", text[:60])
     await ws.send(json.dumps({
         "type": "user_turn",
         "user_turn": {"text": text},
@@ -138,6 +139,7 @@ async def _receive_agent_response(ws) -> str:
                 # Full text response available
                 text = msg.get("agent_response_event", {}).get("agent_response", "")
                 if text:
+                    logger.debug("Agent response received: %s", text[:60])
                     return text
 
             elif t == "agent_response_correction":
@@ -147,15 +149,23 @@ async def _receive_agent_response(ws) -> str:
 
             elif t in ("turn_start", "interruption", "ping"):
                 # Control frames — ignore
-                pass
+                logger.debug("Received control frame: %s", t)
 
             elif t == "conversation_ended":
+                logger.info("Agent ended conversation")
                 break
+            
+            else:
+                # Unrecognized message type
+                logger.warning("Unrecognized message type: %s", t)
 
     except websockets.exceptions.ConnectionClosed:
-        pass
+        logger.warning("WebSocket connection closed while waiting for response")
 
-    return "".join(buffer)
+    result = "".join(buffer)
+    if result:
+        logger.debug("Buffered agent response: %s", result[:60])
+    return result
 
 
 async def run_conversation(customer_turns: list[str]) -> Transcript:
@@ -213,9 +223,18 @@ async def run_conversation(customer_turns: list[str]) -> Transcript:
             logger.warning("No initiation response from agent")
 
         # Run conversation (per-message timeouts only)
-        for user_text in customer_turns[:MAX_CONVERSATION_TURNS]:
+        for i, user_text in enumerate(customer_turns[:MAX_CONVERSATION_TURNS]):
+            logger.info("Turn %d/%d: Sending customer utterance", i+1, len(customer_turns[:MAX_CONVERSATION_TURNS]))
             transcript.turns.append(ConversationTurn(role="customer", content=user_text))
-            await _send_user_turn(ws, user_text)
+            
+            try:
+                await _send_user_turn(ws, user_text)
+            except Exception as e:
+                logger.error("Failed to send user turn: %s", e)
+                break
+            
+            # Small delay to let agent process
+            await asyncio.sleep(0.5)
 
             # Per-message timeout: 20 seconds for agent response
             try:
