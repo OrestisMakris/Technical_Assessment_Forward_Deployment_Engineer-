@@ -46,6 +46,7 @@ FIXER_MODEL: str = os.getenv("FIXER_MODEL", "gemini-1.5-flash")
 
 # ── Simulation ────────────────────────────────────────────────────────────────
 MAX_CONVERSATION_TURNS: int = int(os.getenv("MAX_CONVERSATION_TURNS", "12"))
+SIMULATION_DELAY_SECONDS: float = float(os.getenv("SIMULATION_DELAY_SECONDS", "13"))  # For free tier: 5 req/min = 12 sec between requests
 
 # ── SSE broadcast (observation UI) ───────────────────────────────────────────
 SSE_QUEUE_MAXSIZE: int = 100

@@ -199,31 +199,35 @@ class RefinementLoop:
     # ── Internal helpers ──────────────────────────────────────────────────────
 
     async def _simulate_all(self, system_prompt: str):
-        """Run simulations for all scenarios concurrently (bounded)."""
-        sem = asyncio.Semaphore(3)  # max 3 concurrent ElevenLabs sessions
-
-        async def _run_one(scenario):
-            async with sem:
-                self._emit("scenario_start", {
+        """Run simulations sequentially to respect API rate limits."""
+        from refinement_loop.config import SIMULATION_DELAY_SECONDS
+        from refinement_loop.models import Transcript
+        
+        transcripts = []
+        for i, scenario in enumerate(self.scenarios):
+            if i > 0:
+                # Delay between requests to respect rate limit (free tier: 5 req/min)
+                logger.info("⏳ Waiting %.1fs before next scenario...", SIMULATION_DELAY_SECONDS)
+                await asyncio.sleep(SIMULATION_DELAY_SECONDS)
+            
+            self._emit("scenario_start", {
+                "scenario_id": scenario.id,
+                "scenario_name": scenario.name,
+            })
+            try:
+                transcript = await simulate(scenario, system_prompt)
+                self._emit("scenario_done", {
                     "scenario_id": scenario.id,
-                    "scenario_name": scenario.name,
+                    "turns": len(transcript.turns),
                 })
-                try:
-                    transcript = await simulate(scenario, system_prompt)
-                    self._emit("scenario_done", {
-                        "scenario_id": scenario.id,
-                        "turns": len(transcript.turns),
-                    })
-                    return transcript
-                except Exception as exc:
-                    logger.error("Simulation failed for '%s': %s", scenario.id, exc)
-                    # Return an empty transcript so evaluation still runs
-                    from refinement_loop.models import Transcript
-                    t = Transcript(scenario_id=scenario.id)
-                    return t
-
-        tasks = [_run_one(s) for s in self.scenarios]
-        return await asyncio.gather(*tasks)
+                transcripts.append(transcript)
+            except Exception as exc:
+                logger.error("Simulation failed for '%s': %s", scenario.id, exc)
+                # Return an empty transcript so evaluation still runs
+                t = Transcript(scenario_id=scenario.id)
+                transcripts.append(t)
+        
+        return transcripts
 
     def _emit(self, event: str, data: dict) -> None:
         """Put an SSE event onto the queue (non-blocking)."""
