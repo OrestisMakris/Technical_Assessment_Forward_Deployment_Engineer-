@@ -99,20 +99,66 @@ async def run_loop_background(scenario_ids: list[str] | None = None) -> None:
     Run the refinement loop as a background coroutine, publishing
     all events to the SSE manager.
     """
-    from refinement_loop.loop import RefinementLoop
+    import logging
+    logger = logging.getLogger("sse_bridge")
+    
+    from refinement_loop.config import GOOGLE_CONFIGURED, ELEVENLABS_CONFIGURED
+    
+    logger.info("=" * 100)
+    logger.info("🚀 Refinement loop starting...")
+    logger.info("   Google API: %s", "✅ configured" if GOOGLE_CONFIGURED else "❌ NOT configured")
+    logger.info("   ElevenLabs: %s", "✅ configured" if ELEVENLABS_CONFIGURED else "❌ NOT configured")
+    logger.info("=" * 100)
+    
+    sse_manager.publish({"event": "log", "data": {"message": "🚀 Refinement loop starting..."}, "ts": _now()})
 
     # Create a queue and wire it to the SSE manager
     q: asyncio.Queue = asyncio.Queue(maxsize=SSE_QUEUE_MAXSIZE)
 
     async def _relay():
         while True:
-            event = await q.get()
-            sse_manager.publish(event)
-            if event.get("event") == "loop_finished":
+            try:
+                event = await q.get()
+                sse_manager.publish(event)
+                # Log important events to console too
+                evt_type = event.get("event", "")
+                if evt_type in ("loop_started", "loop_finished", "step", "evaluation_complete", "scenario_start", "scenario_done"):
+                    logger.info("[SSE] %s: %s", evt_type, event.get("data", {}))
+                if event.get("event") == "loop_finished":
+                    break
+            except Exception as e:
+                logger.error("Error in relay task: %s", e, exc_info=True)
                 break
 
     relay_task = asyncio.create_task(_relay())
 
-    loop = RefinementLoop(sse_queue=q, scenario_ids=scenario_ids)
-    await loop.run()
-    await relay_task
+    try:
+        from refinement_loop.loop import RefinementLoop
+        
+        if not GOOGLE_CONFIGURED or not ELEVENLABS_CONFIGURED:
+            logger.warning("⚠️  DEMO MODE: Missing API credentials")
+            logger.info("   - Skipping live agent simulation")
+            logger.info("   - Using mock data for evaluation")
+            sse_manager.publish({
+                "event": "warning", 
+                "data": {"message": "Running in DEMO MODE without live APIs. See console for details."}, 
+                "ts": _now()
+            })
+        
+        loop = RefinementLoop(sse_queue=q, scenario_ids=scenario_ids)
+        result = await loop.run()
+        logger.info("✅ Refinement loop completed successfully!")
+        sse_manager.publish({"event": "log", "data": {"message": "✅ Loop completed!"}, "ts": _now()})
+    except Exception as exc:
+        logger.error("❌ Refinement loop failed: %s", exc, exc_info=True)
+        logger.error("Traceback:", exc_info=True)
+        sse_manager.publish({"event": "log", "data": {"message": f"❌ Loop failed: {exc}"}, "ts": _now()})
+        # Force the relay task to stop
+        q.put_nowait({"event": "loop_finished", "data": {"reason": "error"}, "ts": _now()})
+    finally:
+        await relay_task
+
+
+def _now() -> str:
+    """ISO timestamp for SSE events."""
+    return datetime.datetime.now().isoformat()

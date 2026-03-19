@@ -72,6 +72,10 @@ class RefinementLoop:
 
     async def run(self) -> RunSummary:
         """Run the full refinement loop and return a RunSummary."""
+        logger.info("━" * 80)
+        logger.info("🚀 REFINEMENT LOOP STARTING")
+        logger.info("━" * 80)
+        
         summary = RunSummary()
         current_prompt = self._load_prompt()
         summary.initial_prompt = current_prompt
@@ -81,19 +85,26 @@ class RefinementLoop:
             "pass_threshold": PASS_THRESHOLD,
             "scenario_count": len(self.scenarios),
         })
+        logger.info("✅ Initialized: %d scenarios, max %d iterations, threshold %.1f", 
+                   len(self.scenarios), MAX_ITERATIONS, PASS_THRESHOLD)
 
         for iteration in range(1, MAX_ITERATIONS + 1):
-            logger.info("═══ ITERATION %d / %d ═══", iteration, MAX_ITERATIONS)
+            logger.info("━" * 80)
+            logger.info("🔄 ITERATION %d / %d", iteration, MAX_ITERATIONS)
+            logger.info("━" * 80)
             iter_result = IterationResult(
                 iteration=iteration,
                 prompt_before=current_prompt,
             )
 
             # ── Step 1: Simulate ─────────────────────────────────────────────
+            logger.info("📝 Step 1/4: SIMULATE - Running %d scenarios...", len(self.scenarios))
             self._emit("step", {"iteration": iteration, "step": "simulate"})
             transcripts = await self._simulate_all(current_prompt)
+            logger.info("✅ Simulation complete")
 
             # ── Step 2: Evaluate ─────────────────────────────────────────────
+            logger.info("📊 Step 2/4: EVALUATE - Evaluating transcripts...")
             self._emit("step", {"iteration": iteration, "step": "evaluate"})
             evaluations = evaluate_all(transcripts, iteration)
             iter_result.evaluations = evaluations
@@ -106,33 +117,37 @@ class RefinementLoop:
                 }
                 for e in evaluations
             }
+            avg_score = sum(e.overall_score for e in evaluations) / len(evaluations)
+            logger.info("📊 Evaluation complete - Average score: %.2f", avg_score)
+            logger.info("  Passed: %d/%d", sum(1 for e in evaluations if e.passed), len(evaluations))
+            
             self._emit("evaluation_complete", {
                 "iteration": iteration,
                 "scores": scores_summary,
-                "average": round(
-                    sum(e.overall_score for e in evaluations) / len(evaluations), 2
-                ),
+                "average": round(avg_score, 2),
             })
 
             # ── Termination check ────────────────────────────────────────────
             if all(e.passed for e in evaluations):
-                logger.info("All scenarios passed at iteration %d — terminating.", iteration)
+                logger.info("🎉 SUCCESS! All scenarios passed at iteration %d", iteration)
                 iter_result.prompt_after = current_prompt
                 summary.iterations.append(iter_result)
                 summary.terminated_reason = "passed"
                 break
 
             if iteration == MAX_ITERATIONS:
-                logger.info("Max iterations reached — terminating.")
+                logger.info("⏸️  Max iterations reached")
                 iter_result.prompt_after = current_prompt
                 summary.iterations.append(iter_result)
                 summary.terminated_reason = "max_iterations"
                 break
 
             # ── Step 3: Fix ──────────────────────────────────────────────────
+            logger.info("🔧 Step 3/4: FIX - Analyzing failures...")
             self._emit("step", {"iteration": iteration, "step": "fix"})
             new_prompt, fixes = apply_fixes(current_prompt, evaluations)
             iter_result.fixes = fixes
+            logger.info("✅ Applied %d fixes", len(fixes))
 
             fix_descriptions = [{"type": f.fix_type, "description": f.description} for f in fixes]
             self._emit("fixes_applied", {
@@ -143,19 +158,20 @@ class RefinementLoop:
 
             # ── Step 4: Push ─────────────────────────────────────────────────
             if new_prompt != current_prompt:
+                logger.info("📤 Step 4/4: PUSH - Pushing updated prompt to ElevenLabs...")
                 self._emit("step", {"iteration": iteration, "step": "push"})
                 try:
                     await push_prompt(new_prompt)
-                    logger.info("Prompt pushed to ElevenLabs.")
+                    logger.info("✅ Prompt pushed successfully")
                 except Exception as exc:
-                    logger.warning("Failed to push prompt (continuing anyway): %s", exc)
+                    logger.warning("⚠️  Failed to push prompt (continuing): %s", exc)
 
                 self._save_prompt(new_prompt)
                 iter_result.prompt_after = new_prompt
                 current_prompt = new_prompt
             else:
+                logger.info("⏭️  No prompt change this iteration")
                 iter_result.prompt_after = current_prompt
-                logger.info("No prompt change this iteration.")
 
             summary.iterations.append(iter_result)
 
@@ -163,6 +179,12 @@ class RefinementLoop:
         summary.final_prompt = current_prompt
 
         log_path = self._write_log(summary)
+        logger.info("━" * 80)
+        logger.info("✅ LOOP COMPLETE - Reason: %s", summary.terminated_reason)
+        logger.info("   Total iterations: %d", len(summary.iterations))
+        logger.info("   Log file: %s", log_path)
+        logger.info("━" * 80)
+        
         self._emit("loop_finished", {
             "reason": summary.terminated_reason,
             "total_iterations": len(summary.iterations),
@@ -172,11 +194,6 @@ class RefinementLoop:
             ),
         })
 
-        logger.info(
-            "Run complete. Reason: %s. Iterations: %d.",
-            summary.terminated_reason,
-            len(summary.iterations),
-        )
         return summary
 
     # ── Internal helpers ──────────────────────────────────────────────────────

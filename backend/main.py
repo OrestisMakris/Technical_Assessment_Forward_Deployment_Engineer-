@@ -72,13 +72,19 @@ async def start_loop(
     """Start the autonomous refinement loop as a background task."""
     global _loop_task, _loop_state
 
+    logger.info("🔴 START LOOP BUTTON CLICKED")
+    logger.info("  Scenarios: %s", scenarios or "all")
+
     if _loop_task and not _loop_task.done():
+        logger.warning("⚠️  Loop already running, rejecting start request")
         return JSONResponse({"status": "already_running"}, status_code=409)
 
     _loop_state = {"status": "running", "iteration": 0}
 
     from refinement_loop.sse_bridge import run_loop_background
+    logger.info("✅ Creating background loop task...")
     _loop_task = asyncio.create_task(run_loop_background(scenario_ids=scenarios))
+    logger.info("✅ Loop task created: %s", _loop_task)
 
     return {"status": "started"}
 

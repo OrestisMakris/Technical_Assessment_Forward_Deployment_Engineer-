@@ -28,13 +28,14 @@ GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "")
 ELEVENLABS_API_KEY: str = os.getenv("ELEVENLABS_API_KEY", "")
 ELEVENLABS_AGENT_ID: str = os.getenv("ELEVENLABS_AGENT_ID", "")
 
-# Validate that required API keys are set
-if not GOOGLE_API_KEY:
-    raise ValueError("❌ GOOGLE_API_KEY not set in .env file")
-if not ELEVENLABS_API_KEY:
-    raise ValueError("❌ ELEVENLABS_API_KEY not set in .env file")
-if not ELEVENLABS_AGENT_ID:
-    raise ValueError("❌ ELEVENLABS_AGENT_ID not set in .env file")
+# Check which APIs are configured
+GOOGLE_CONFIGURED = bool(GOOGLE_API_KEY)
+ELEVENLABS_CONFIGURED = bool(ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID)
+
+if not GOOGLE_CONFIGURED:
+    print("⚠️  WARNING: GOOGLE_API_KEY not set — loop will run in DEMO MODE (simplified)")
+if not ELEVENLABS_CONFIGURED:
+    print("⚠️  WARNING: ELEVENLABS credentials not set — loop will run in FALLBACK MODE (no live agent)")
 
 # ── Models ───────────────────────────────────────────────────────────────────────
 # Gemini 1.5 Pro for customer sim and fixing (needs reasoning);
