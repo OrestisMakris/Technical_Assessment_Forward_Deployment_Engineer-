@@ -140,7 +140,7 @@ def evaluate(
                     failure_quote="",
                 ),
             ],
-            root_cause=RootCause.INSUFFICIENT_INFO,
+            root_cause=RootCause.NONE,
             root_cause_explanation="Simulation failed - ElevenLabs WebSocket connection timeout",
             faulty_file=None,
             faulty_behaviour=None,
