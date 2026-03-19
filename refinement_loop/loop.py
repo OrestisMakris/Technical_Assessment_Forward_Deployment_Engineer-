@@ -35,11 +35,33 @@ from refinement_loop.models import IterationResult, RunSummary
 from refinement_loop.scenarios import SCENARIOS
 from refinement_loop.simulator import simulate
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    datefmt="%H:%M:%S",
-)
+# ── Configure detailed logging to both console AND logs/ folder ────────────────
+
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
+
+# File handler for detailed debug logs
+debug_log_path = LOGS_DIR / f"loop_debug_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+file_handler = logging.FileHandler(debug_log_path, mode="w", encoding="utf-8")
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(logging.Formatter(
+    "%(asctime)s [%(name)-25s] %(levelname)-8s %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+))
+
+# Console handler for INFO level
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.INFO)
+console_handler.setFormatter(logging.Formatter(
+    "%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S"
+))
+
+# Root logger config
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG)
+root_logger.addHandler(file_handler)
+root_logger.addHandler(console_handler)
+
 logger = logging.getLogger("loop")
 
 
@@ -182,7 +204,8 @@ class RefinementLoop:
         logger.info("━" * 80)
         logger.info("✅ LOOP COMPLETE - Reason: %s", summary.terminated_reason)
         logger.info("   Total iterations: %d", len(summary.iterations))
-        logger.info("   Log file: %s", log_path)
+        logger.info("   Structured log: %s", log_path)
+        logger.info("   Debug log: %s", debug_log_path)
         logger.info("━" * 80)
         
         self._emit("loop_finished", {

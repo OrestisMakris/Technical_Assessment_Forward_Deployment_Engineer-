@@ -69,6 +69,8 @@ def health_check():
     """Simple health check endpoint."""
     return {"status": "healthy", "service": "TechMellon Airlines API"}
 
+# (Optional: If you want to remove the massive /tools/verify endpoint to clean up main.py, you can abstract it to a router, but we'll leave it here as requested)
+
 
 @app.post("/tools/verify")
 async def verify_tools():
