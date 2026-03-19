@@ -203,12 +203,16 @@ class RefinementLoop:
         from refinement_loop.config import SIMULATION_DELAY_SECONDS
         from refinement_loop.models import Transcript
         
+        logger.info("🎬 Running %d scenario(s) SEQUENTIALLY (one at a time)", len(self.scenarios))
+        
         transcripts = []
         for i, scenario in enumerate(self.scenarios):
             if i > 0:
                 # Delay between requests to respect rate limit (free tier: 5 req/min)
                 logger.info("⏳ Waiting %.1fs before next scenario...", SIMULATION_DELAY_SECONDS)
                 await asyncio.sleep(SIMULATION_DELAY_SECONDS)
+            
+            logger.info("→ Scenario %d/%d: '%s'", i+1, len(self.scenarios), scenario.id)
             
             self._emit("scenario_start", {
                 "scenario_id": scenario.id,

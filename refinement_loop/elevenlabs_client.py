@@ -142,12 +142,32 @@ async def run_conversation(customer_turns: list[str]) -> Transcript:
     transcript = Transcript(scenario_id="")   # caller sets scenario_id
     extra_headers = {"xi-api-key": ELEVENLABS_API_KEY}
 
-    # Only timeout the connection establishment, not the whole conversation
-    try:
-        async with asyncio.timeout(10.0):
-            ws = await websockets.connect(_WS_URL, additional_headers=extra_headers)
-    except asyncio.TimeoutError as e:
-        raise TimeoutError(f"Failed to connect to ElevenLabs: {e}") from e
+    # Retry logic with exponential backoff (up to 3 attempts)
+    max_retries = 3
+    retry_delay = 2.0
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            logger.info("Attempting ElevenLabs connection (attempt %d/%d)", attempt, max_retries)
+            
+            # Connection timeout: 30 seconds (allows for slower networks)
+            async with asyncio.timeout(30.0):
+                ws = await websockets.connect(_WS_URL, additional_headers=extra_headers)
+            
+            logger.info("ElevenLabs connection established")
+            break
+            
+        except (asyncio.TimeoutError, asyncio.TimeoutError) as e:
+            logger.warning("Connection attempt %d failed: %s", attempt, type(e).__name__)
+            if attempt < max_retries:
+                logger.info("Retrying in %.1fs...", retry_delay)
+                await asyncio.sleep(retry_delay)
+                retry_delay *= 1.5  # exponential backoff
+            else:
+                raise TimeoutError(f"Failed to connect to ElevenLabs after {max_retries} attempts") from e
+        except Exception as e:
+            logger.error("Connection failed: %s", e)
+            raise
 
     async with ws:
         # Handshake
@@ -158,22 +178,38 @@ async def run_conversation(customer_turns: list[str]) -> Transcript:
             },
         }))
 
-        # Discard the initiation response
-        await asyncio.wait_for(ws.recv(), timeout=10.0)
+        # Discard the initiation response (with timeout)
+        try:
+            await asyncio.wait_for(ws.recv(), timeout=10.0)
+        except asyncio.TimeoutError:
+            logger.warning("No initiation response from agent")
 
+        # Run conversation (per-message timeouts only)
         for user_text in customer_turns[:MAX_CONVERSATION_TURNS]:
             transcript.turns.append(ConversationTurn(role="customer", content=user_text))
             await _send_user_turn(ws, user_text)
 
-            # Per-message timeout: 15 seconds for agent response
-            agent_text = await asyncio.wait_for(
-                _receive_agent_response(ws), timeout=15.0
-            )
+            # Per-message timeout: 20 seconds for agent response
+            try:
+                agent_text = await asyncio.wait_for(
+                    _receive_agent_response(ws), timeout=20.0
+                )
+            except asyncio.TimeoutError:
+                logger.warning("Agent response timeout for turn %d", len(transcript.turns))
+                # Try one more time with longer timeout
+                try:
+                    agent_text = await asyncio.wait_for(
+                        _receive_agent_response(ws), timeout=25.0
+                    )
+                except asyncio.TimeoutError:
+                    break  # Give up on this conversation
+            
             transcript.turns.append(ConversationTurn(role="agent", content=agent_text))
 
             # If agent signals end of call, stop early
             end_phrases = ("is there anything else", "goodbye", "have a great flight")
             if any(p in agent_text.lower() for p in end_phrases):
+                logger.info("Agent ended conversation with: %s", agent_text[:50])
                 break
 
         # Politely end the session
