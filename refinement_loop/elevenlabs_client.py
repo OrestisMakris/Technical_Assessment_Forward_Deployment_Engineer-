@@ -142,39 +142,45 @@ async def run_conversation(customer_turns: list[str]) -> Transcript:
     transcript = Transcript(scenario_id="")   # caller sets scenario_id
     extra_headers = {"xi-api-key": ELEVENLABS_API_KEY}
 
-    # Connection timeout: 10 seconds, agent response timeout: 15 seconds
-    async with asyncio.timeout(10.0):  # connection timeout
-        async with websockets.connect(_WS_URL, additional_headers=extra_headers) as ws:
-            # Handshake
-            await ws.send(json.dumps({
-                "type": "conversation_initiation_client_data",
-                "conversation_config_override": {
-                    "tts": {"voice_id": None}   # no audio output needed
-                },
-            }))
+    # Only timeout the connection establishment, not the whole conversation
+    try:
+        async with asyncio.timeout(10.0):
+            ws = await websockets.connect(_WS_URL, additional_headers=extra_headers)
+    except asyncio.TimeoutError as e:
+        raise TimeoutError(f"Failed to connect to ElevenLabs: {e}") from e
 
-            # Discard the initiation response
-            await asyncio.wait_for(ws.recv(), timeout=10.0)
+    async with ws:
+        # Handshake
+        await ws.send(json.dumps({
+            "type": "conversation_initiation_client_data",
+            "conversation_config_override": {
+                "tts": {"voice_id": None}   # no audio output needed
+            },
+        }))
 
-            for user_text in customer_turns[:MAX_CONVERSATION_TURNS]:
-                transcript.turns.append(ConversationTurn(role="customer", content=user_text))
-                await _send_user_turn(ws, user_text)
+        # Discard the initiation response
+        await asyncio.wait_for(ws.recv(), timeout=10.0)
 
-                agent_text = await asyncio.wait_for(
-                    _receive_agent_response(ws), timeout=15.0
-                )
-                transcript.turns.append(ConversationTurn(role="agent", content=agent_text))
+        for user_text in customer_turns[:MAX_CONVERSATION_TURNS]:
+            transcript.turns.append(ConversationTurn(role="customer", content=user_text))
+            await _send_user_turn(ws, user_text)
 
-                # If agent signals end of call, stop early
-                end_phrases = ("is there anything else", "goodbye", "have a great flight")
-                if any(p in agent_text.lower() for p in end_phrases):
-                    break
+            # Per-message timeout: 15 seconds for agent response
+            agent_text = await asyncio.wait_for(
+                _receive_agent_response(ws), timeout=15.0
+            )
+            transcript.turns.append(ConversationTurn(role="agent", content=agent_text))
 
-            # Politely end the session
-            try:
-                await ws.send(json.dumps({"type": "end_conversation"}))
-            except Exception:
-                pass
+            # If agent signals end of call, stop early
+            end_phrases = ("is there anything else", "goodbye", "have a great flight")
+            if any(p in agent_text.lower() for p in end_phrases):
+                break
+
+        # Politely end the session
+        try:
+            await ws.send(json.dumps({"type": "end_conversation"}))
+        except Exception:
+            pass
 
     return transcript
 
