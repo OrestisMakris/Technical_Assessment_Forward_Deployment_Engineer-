@@ -142,25 +142,27 @@ async def run_conversation(customer_turns: list[str]) -> Transcript:
     transcript = Transcript(scenario_id="")   # caller sets scenario_id
     extra_headers = {"xi-api-key": ELEVENLABS_API_KEY}
 
-    async with websockets.connect(_WS_URL, additional_headers=extra_headers) as ws:
-        # Handshake
-        await ws.send(json.dumps({
-            "type": "conversation_initiation_client_data",
-            "conversation_config_override": {
-                "tts": {"voice_id": None}   # no audio output needed
-            },
-        }))
+    # Connection timeout: 10 seconds, agent response timeout: 15 seconds
+    async with asyncio.timeout(10.0):  # connection timeout
+        async with websockets.connect(_WS_URL, additional_headers=extra_headers) as ws:
+            # Handshake
+            await ws.send(json.dumps({
+                "type": "conversation_initiation_client_data",
+                "conversation_config_override": {
+                    "tts": {"voice_id": None}   # no audio output needed
+                },
+            }))
 
-        # Discard the initiation response
-        await ws.recv()
+            # Discard the initiation response
+            await asyncio.wait_for(ws.recv(), timeout=10.0)
 
-        for user_text in customer_turns[:MAX_CONVERSATION_TURNS]:
-            transcript.turns.append(ConversationTurn(role="customer", content=user_text))
-            await _send_user_turn(ws, user_text)
+            for user_text in customer_turns[:MAX_CONVERSATION_TURNS]:
+                transcript.turns.append(ConversationTurn(role="customer", content=user_text))
+                await _send_user_turn(ws, user_text)
 
-            agent_text = await asyncio.wait_for(
-                _receive_agent_response(ws), timeout=30.0
-            )
+                agent_text = await asyncio.wait_for(
+                    _receive_agent_response(ws), timeout=15.0
+                )
             transcript.turns.append(ConversationTurn(role="agent", content=agent_text))
 
             # If agent signals end of call, stop early
