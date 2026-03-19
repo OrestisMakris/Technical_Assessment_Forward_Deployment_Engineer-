@@ -119,7 +119,8 @@ async def simulate(scenario: Scenario, system_prompt: str) -> Transcript:
             transcript = await run_conversation(customer_utterances)
         except Exception as exc:
             logger.warning(
-                "ElevenLabs WS failed (%s); falling back to direct Claude agent", exc
+                "ElevenLabs WS failed: %s %s; falling back to direct Claude agent", 
+                type(exc).__name__, str(exc)
             )
             use_elevenlabs = False
 
