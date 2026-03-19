@@ -11,6 +11,20 @@
 *.sln.docstates
 *.env
 
+# API Keys and secrets (NEVER commit these!)
+.env.local
+.env.*.local
+GOOGLE_API_KEY
+ANTHROPIC_API_KEY
+ELEVENLABS_API_KEY
+ELEVENLABS_AGENT_ID
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+techmellon.db
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

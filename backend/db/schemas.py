@@ -7,15 +7,10 @@ from pydantic import BaseModel
 from typing import Optional
 
 
-class FlightSearchRequest(BaseModel):
-    destination: Optional[str] = None
-    date: Optional[str] = None
-    min_price: Optional[float] = None
-    max_price: Optional[float] = None
-    seat_class: Optional[str] = None
+# ── Flight schemas ────────────────────────────────────────────────────────────
 
-
-class FlightResponse(BaseModel):
+class FlightOut(BaseModel):
+    """Flight response model."""
     id: str
     origin: str
     destination: str
@@ -26,38 +21,87 @@ class FlightResponse(BaseModel):
     seat_class: str
     price_gbp: float
     seats_available: int
+    status: str = "on_time"
 
 
-class BookingRequest(BaseModel):
+class FlightSearchParams(BaseModel):
+    """Flight search parameters."""
+    destination: Optional[str] = None
+    date: Optional[str] = None
+    min_price: Optional[float] = None
+    max_price: Optional[float] = None
+    seat_class: Optional[str] = None
+
+
+class FlightStatusOut(BaseModel):
+    """Flight status response."""
+    id: str
+    destination: str
+    departure_dt: str
+    status: str
+    seats_available: int
+
+
+# ── Booking schemas ───────────────────────────────────────────────────────────
+
+class BookingCreateRequest(BaseModel):
+    """Request body for creating a booking."""
     flight_id: str
     passenger_name: str
     seat_preference: Optional[str] = None
     fare_type: str = "standard"
 
 
-class BookingResponse(BaseModel):
+class BookingOut(BaseModel):
+    """Booking response model."""
     ref: str
     flight_id: str
     passenger_name: str
-    seat_number: Optional[str]
+    seat_number: Optional[str] = None
+    seat_preference: Optional[str] = None
     total_paid_gbp: float
     status: str
     created_at: str
+    fare_type: str = "standard"
 
 
-class BaggageRequest(BaseModel):
+class BookingRescheduleRequest(BaseModel):
+    """Request body for rescheduling a booking."""
+    booking_ref: str
+    new_flight_id: str
+
+
+# ── Extras schemas ────────────────────────────────────────────────────────────
+
+class ExtraAddRequest(BaseModel):
+    """Request body for adding baggage/extras to a booking."""
+    booking_ref: str
+    item_type: str  # extra_bag, pram, sports_equipment, oversized
+    description: Optional[str] = None
+
+
+class ExtraOut(BaseModel):
+    """Extra item response model."""
+    id: int
     booking_ref: str
     item_type: str
     description: Optional[str] = None
-    fee_gbp: float = 0.0
+    fee_gbp: float
 
+
+# ── Assistance schemas ────────────────────────────────────────────────────────
 
 class AssistanceRequest(BaseModel):
+    """Request body for special assistance."""
     booking_ref: str
-    assistance_code: str
+    assistance_code: str  # WCHR, WCHS, WCHC, BLND, DEAF, etc.
     notes: Optional[str] = None
 
 
-class PolicyQuery(BaseModel):
-    policy_type: str  # "pet", "baggage", "assistance", "checkin", "cancellation"
-    query: Optional[str] = None
+class AssistanceOut(BaseModel):
+    """Assistance response model."""
+    id: int
+    booking_ref: str
+    assistance_code: str
+    notes: Optional[str] = None
+    confirmed: bool = True
