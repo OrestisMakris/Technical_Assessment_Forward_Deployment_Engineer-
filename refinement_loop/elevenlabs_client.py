@@ -163,18 +163,18 @@ async def run_conversation(customer_turns: list[str]) -> Transcript:
                 agent_text = await asyncio.wait_for(
                     _receive_agent_response(ws), timeout=15.0
                 )
-            transcript.turns.append(ConversationTurn(role="agent", content=agent_text))
+                transcript.turns.append(ConversationTurn(role="agent", content=agent_text))
 
-            # If agent signals end of call, stop early
-            end_phrases = ("is there anything else", "goodbye", "have a great flight")
-            if any(p in agent_text.lower() for p in end_phrases):
-                break
+                # If agent signals end of call, stop early
+                end_phrases = ("is there anything else", "goodbye", "have a great flight")
+                if any(p in agent_text.lower() for p in end_phrases):
+                    break
 
-        # Politely end the session
-        try:
-            await ws.send(json.dumps({"type": "end_conversation"}))
-        except Exception:
-            pass
+            # Politely end the session
+            try:
+                await ws.send(json.dumps({"type": "end_conversation"}))
+            except Exception:
+                pass
 
     return transcript
 
