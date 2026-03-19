@@ -103,39 +103,38 @@ def generate_customer_script(scenario: Scenario) -> list[str]:
 
 async def simulate(scenario: Scenario, system_prompt: str) -> Transcript:
     """
-    Run a full simulated conversation for a scenario.
+    Run a full simulated conversation for a scenario using ElevenLabs agent.
 
     Returns a Transcript with interleaved customer/agent turns.
-    Falls back to the Anthropic-powered agent if ElevenLabs is not configured.
     """
     customer_utterances = generate_customer_script(scenario)
 
-    # Choose transport: ElevenLabs WS or direct Anthropic fallback
-    use_elevenlabs = bool(ELEVENLABS_AGENT_ID)
-
-    if use_elevenlabs:
-        from refinement_loop.elevenlabs_client import run_conversation
-        try:
-            transcript = await run_conversation(customer_utterances)
-        except Exception as exc:
-            logger.warning(
-                "ElevenLabs WS failed: %s %s; falling back to direct Claude agent", 
-                type(exc).__name__, str(exc)
-            )
-            use_elevenlabs = False
-
-    if not use_elevenlabs:
-        from refinement_loop.elevenlabs_client import run_conversation_fallback
-        import anthropic
-        anthropic_client = anthropic.Anthropic()
-        transcript = await run_conversation_fallback(
-            customer_utterances, system_prompt, anthropic_client
+    # Use ElevenLabs WebSocket agent
+    if not ELEVENLABS_AGENT_ID:
+        raise ValueError(
+            "ELEVENLABS_AGENT_ID not configured. Cannot run simulation without ElevenLabs agent."
         )
 
+    from refinement_loop.elevenlabs_client import run_conversation
+    try:
+        transcript = await run_conversation(customer_utterances)
+    except Exception as exc:
+        logger.error(
+            "ElevenLabs WS failed: %s - %s", 
+            type(exc).__name__, str(exc)
+        )
+        # Return empty transcript so evaluation can still run
+        transcript = Transcript(scenario_id=scenario.id)
+
     transcript.scenario_id = scenario.id
-    logger.info(
-        "Transcript for '%s': %d turns", scenario.id, len(transcript.turns)
-    )
+    if transcript.turns:
+        logger.info(
+            "Transcript for '%s': %d turns", scenario.id, len(transcript.turns)
+        )
+    else:
+        logger.warning(
+            "Transcript for '%s': EMPTY (ElevenLabs connection failed)", scenario.id
+        )
     return transcript
 
 
