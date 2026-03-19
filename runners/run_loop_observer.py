@@ -3,7 +3,7 @@
 Run the refinement loop with live observation UI.
 
 The UI will be available at:
-  http://localhost:8000/loop-observer.html
+  http://localhost:8000/
 
 Steps:
 1. This script starts the FastAPI backend
@@ -54,7 +54,7 @@ def main():
         
         # Open the UI
         print("🌐 Opening Loop Observer UI...")
-        webbrowser.open("http://localhost:8000/loop-observer.html")
+        webbrowser.open("http://localhost:8000/")
         
         print()
         print("=" * 80)
