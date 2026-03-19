@@ -115,7 +115,23 @@ async def simulate(scenario: Scenario, system_prompt: str) -> Transcript:
             "ELEVENLABS_AGENT_ID not configured. Cannot run simulation without ElevenLabs agent."
         )
 
-    from refinement_loop.elevenlabs_client import run_conversation
+    # Check agent health first
+    from refinement_loop.elevenlabs_client import run_conversation, check_agent_health
+    
+    agent_healthy = await check_agent_health()
+    if not agent_healthy:
+        logger.error(
+            "ElevenLabs agent %s is not responding. Agent may be disconnected or offline.",
+            ELEVENLABS_AGENT_ID
+        )
+        # Return empty transcript so evaluation can still run
+        transcript = Transcript(scenario_id=scenario.id)
+        transcript.scenario_id = scenario.id
+        logger.warning(
+            "Transcript for '%s': EMPTY (agent health check failed)", scenario.id
+        )
+        return transcript
+    
     try:
         transcript = await run_conversation(customer_utterances)
     except Exception as exc:

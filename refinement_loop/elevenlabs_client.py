@@ -58,6 +58,34 @@ async def get_current_prompt() -> str:
         return data["conversation_config"]["agent"]["prompt"]["prompt"]
 
 
+async def check_agent_health() -> bool:
+    """
+    Check if the ElevenLabs agent is reachable and responding.
+    Returns True if agent is healthy, False otherwise.
+    """
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(
+                f"{_BASE}/convai/agents/{ELEVENLABS_AGENT_ID}",
+                headers=_HEADERS,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            # Check if agent has required configuration
+            is_healthy = (
+                data.get("conversation_config") is not None and
+                data.get("conversation_config", {}).get("agent") is not None
+            )
+            if is_healthy:
+                logger.info("✅ ElevenLabs agent %s is healthy", ELEVENLABS_AGENT_ID)
+            else:
+                logger.warning("⚠️ ElevenLabs agent %s configuration incomplete", ELEVENLABS_AGENT_ID)
+            return is_healthy
+    except Exception as e:
+        logger.error("❌ ElevenLabs agent health check failed: %s", e)
+        return False
+
+
 async def push_prompt(new_prompt: str) -> None:
     """Update the agent's system prompt via the ElevenLabs REST API."""
     payload = {
