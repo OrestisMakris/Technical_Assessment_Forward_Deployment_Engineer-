@@ -38,18 +38,10 @@ Navigate to `http://localhost:8000` (static file served from `backend/static/ind
 
 ### 5. Start the loop
 
-Click **Start loop** in the UI, or via API:
+Click **RUN AGAIN** in the UI, or run the following standalone script:
 
 ```bash
-curl -X POST http://localhost:8000/loop/start
-```
-
-To run a subset of scenarios:
-
-```bash
-curl -X POST "http://localhost:8000/loop/start" \
-  -H "Content-Type: application/json" \
-  -d '["book_next_available", "cancel_refund"]'
+python start_loop.py
 ```
 
 ### 6. Adjust thresholds (for the walkthrough)
