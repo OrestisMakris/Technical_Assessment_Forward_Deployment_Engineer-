@@ -35,11 +35,11 @@ class FlightSearchParams(BaseModel):
 
 class FlightStatusOut(BaseModel):
     """Flight status response."""
-    id: str
-    destination: str
+    flight_id: str
     departure_dt: str
     status: str
-    seats_available: int
+    gate: Optional[str] = None
+    delay_minutes: int = 0
 
 
 # ── Booking schemas ───────────────────────────────────────────────────────────
@@ -63,11 +63,13 @@ class BookingOut(BaseModel):
     status: str
     created_at: str
     fare_type: str = "standard"
+    flight: Optional[FlightOut] = None
+    extras: list["ExtraOut"] = []
+    assistance: list["AssistanceOut"] = []
 
 
 class BookingRescheduleRequest(BaseModel):
     """Request body for rescheduling a booking."""
-    booking_ref: str
     new_flight_id: str
 
 
@@ -75,7 +77,6 @@ class BookingRescheduleRequest(BaseModel):
 
 class ExtraAddRequest(BaseModel):
     """Request body for adding baggage/extras to a booking."""
-    booking_ref: str
     item_type: str  # extra_bag, pram, sports_equipment, oversized
     description: Optional[str] = None
 
@@ -93,7 +94,6 @@ class ExtraOut(BaseModel):
 
 class AssistanceRequest(BaseModel):
     """Request body for special assistance."""
-    booking_ref: str
     assistance_code: str  # WCHR, WCHS, WCHC, BLND, DEAF, etc.
     notes: Optional[str] = None
 
@@ -105,3 +105,6 @@ class AssistanceOut(BaseModel):
     assistance_code: str
     notes: Optional[str] = None
     confirmed: bool = True
+
+
+BookingOut.model_rebuild()

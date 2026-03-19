@@ -205,7 +205,7 @@ let es = null;
 
 function startLoop() {
   document.getElementById('start-btn').disabled = true;
-  fetch('/loop/start',{method:'POST'}).then(r=>r.json())
+  fetch('/loop/start').then(r=>r.json())
     .then(()=>connectSSE()).catch(()=>{document.getElementById('start-btn').disabled=false;});
 }
 

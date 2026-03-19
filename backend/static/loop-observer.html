@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechMellon Airlines - Loop Observer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0e27;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #333;
+        }
+        
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: #00d4ff;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        button {
+            background: #00d4ff;
+            color: #0a0e27;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        
+        button:hover:not(:disabled) {
+            background: #00b8d4;
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .status {
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .status.running {
+            background: #1a472a;
+            color: #4ade80;
+        }
+        
+        .status.idle {
+            background: #472a2a;
+            color: #f87171;
+        }
+        
+        .status.completed {
+            background: #2a3a47;
+            color: #38bdf8;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            background: #1a1e3f;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .card h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .conversation {
+            grid-column: 1 / 3;
+            height: 400px;
+        }
+        
+        .scores {
+            grid-column: 3;
+            height: 400px;
+        }
+        
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-right: 10px;
+        }
+        
+        .messages::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .messages::-webkit-scrollbar-track {
+            background: #0a0e27;
+        }
+        
+        .messages::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+        
+        .turn {
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        
+        .turn.customer {
+            background: #1a4d1a;
+            color: #86efac;
+            border-left: 3px solid #4ade80;
+        }
+        
+        .turn.agent {
+            background: #1a3a4d;
+            color: #87ceeb;
+            border-left: 3px solid #38bdf8;
+        }
+        
+        .turn-label {
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            opacity: 0.8;
+        }
+        
+        .score-item {
+            padding: 12px;
+            background: #0a0e27;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            border-left: 3px solid #333;
+        }
+        
+        .score-item.good {
+            border-left-color: #4ade80;
+        }
+        
+        .score-item.bad {
+            border-left-color: #f87171;
+        }
+        
+        .score-item.medium {
+            border-left-color: #fbbf24;
+        }
+        
+        .score-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: #a0a0a0;
+            margin-bottom: 4px;
+        }
+        
+        .score-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #00d4ff;
+        }
+        
+        .score-bar {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+        
+        .score-fill {
+            height: 100%;
+            background: #4ade80;
+            transition: width 0.3s;
+        }
+        
+        .bottom-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .iterations {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        
+        .iteration-item {
+            padding: 12px;
+            background: #0a0e27;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            border-left: 3px solid #333;
+            font-size: 12px;
+        }
+        
+        .iteration-item.current {
+            border-left-color: #00d4ff;
+            background: #1a2a4d;
+        }
+        
+        .iteration-item.passed {
+            border-left-color: #4ade80;
+        }
+        
+        .iteration-item.failed {
+            border-left-color: #f87171;
+        }
+        
+        .iteration-num {
+            font-weight: 700;
+            color: #00d4ff;
+            margin-bottom: 4px;
+        }
+        
+        .diff {
+            background: #0a0e27;
+            border-radius: 4px;
+            padding: 12px;
+            overflow-y: auto;
+            max-height: 250px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+        
+        .diff-line {
+            margin-bottom: 2px;
+        }
+        
+        .diff-add {
+            color: #4ade80;
+        }
+        
+        .diff-remove {
+            color: #f87171;
+        }
+        
+        .diff-context {
+            color: #888;
+        }
+        
+        .empty {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+            font-size: 13px;
+        }
+        
+        .iterations::-webkit-scrollbar,
+        .diff::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .iterations::-webkit-scrollbar-track,
+        .diff::-webkit-scrollbar-track {
+            background: #0a0e27;
+        }
+        
+        .iterations::-webkit-scrollbar-thumb,
+        .diff::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid #333;
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔄 Loop Observer</h1>
+        <div class="controls">
+            <div class="status" id="status">⏸️ Idle</div>
+            <button id="runBtn" onclick="startLoop()">▶️ RUN AGAIN</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="card conversation">
+            <h3>Live Conversation</h3>
+            <div class="messages" id="messages"></div>
+        </div>
+        
+        <div class="card scores">
+            <h3>Current Scores</h3>
+            <div id="scoresContainer"></div>
+        </div>
+    </div>
+    
+    <div class="bottom-section">
+        <div class="card">
+            <h3>Iteration History</h3
+>
+            <div class="iterations" id="iterations"></div>
+        </div>
+        
+        <div class="card">
+            <h3>Prompt Changes</h3>
+            <div class="diff" id="diff"><div class="empty">No changes yet</div></div>
+        </div>
+    </div>
+
+    <script>
+        let eventSource = null;
+        let currentIteration = 0;
+        let iterations = [];
+        
+        function startLoop() {
+            const btn = document.getElementById('runBtn');
+            btn.disabled = true;
+            
+            fetch('/loop/start', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    console.log('Loop started:', data);
+                    connectStream();
+                })
+                .catch(err => {
+                    console.error('Failed to start loop:', err);
+                    alert('Error starting loop: ' + err.message);
+                    btn.disabled = false;
+                });
+        }
+        
+        function connectStream() {
+            if (eventSource) {
+                eventSource.close();
+            }
+            
+            eventSource = new EventSource('/loop/stream');
+            
+            eventSource.addEventListener('loop_started', (e) => {
+                const data = JSON.parse(e.data);
+                console.log('Loop started event:', data);
+                updateStatus('running', '🟢 Running');
+                document.getElementById('messages').innerHTML = '';
+                iterations = [];
+                updateIterations();
+            });
+            
+            eventSource.addEventListener('iteration_started', (e) => {
+                const data = JSON.parse(e.data);
+                currentIteration = data.iteration;
+                console.log('Iteration started:', currentIteration);
+                iterations.push({
+                    num: currentIteration,
+                    status: 'running',
+                    scores: null,
+                    changes: []
+                });
+                updateIterations();
+            });
+            
+            eventSource.addEventListener('simulation_complete', (e) => {
+                const data = JSON.parse(e.data);
+                console.log('Simulation complete:', data);
+                if (data.turns) {
+                    data.turns.forEach(turn => {
+                        addMessage(turn.role, turn.content);
+                    });
+                }
+            });
+            
+            eventSource.addEventListener('evaluation_complete', (e) => {
+                const data = JSON.parse(e.data);
+                console.log('Evaluation complete:', data);
+                updateScores(data.scores);
+                if (iterations.length > 0) {
+                    iterations[iterations.length - 1].scores = data.scores;
+                    updateIterations();
+                }
+            });
+            
+            eventSource.addEventListener('prompt_updated', (e) => {
+                const data = JSON.parse(e.data);
+                console.log('Prompt updated:', data);
+                updateDiff(data.old_prompt, data.new_prompt);
+                if (iterations.length > 0) {
+                    iterations[iterations.length - 1].changes = data;
+                    updateIterations();
+                }
+            });
+            
+            eventSource.addEventListener('iteration_complete', (e) => {
+                const data = JSON.parse(e.data);
+                console.log('Iteration complete:', data);
+                if (iterations.length > 0) {
+                    iterations[iterations.length - 1].status = data.passed ? 'passed' : 'failed';
+                    updateIterations();
+                }
+            });
+            
+            eventSource.addEventListener('loop_complete', (e) => {
+                const data = JSON.parse(e.data);
+                console.log('Loop complete:', data);
+                updateStatus('completed', '✅ Completed');
+                document.getElementById('runBtn').disabled = false;
+            });
+            
+            eventSource.onerror = (err) => {
+                console.error('SSE error:', err);
+                eventSource.close();
+            };
+        }
+        
+        function updateStatus(status, text) {
+            const el = document.getElementById('status');
+            el.textContent = text;
+            el.className = 'status ' + status;
+        }
+        
+        function addMessage(role, content) {
+            const container = document.getElementById('messages');
+            const div = document.createElement('div');
+            div.className = `turn ${role}`;
+            div.innerHTML = `
+                <div class="turn-label">${role.toUpperCase()}</div>
+                <div>${escapeHtml(content)}</div>
+            `;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function updateScores(scores) {
+            const container = document.getElementById('scoresContainer');
+            if (!scores) {
+                container.innerHTML = '<div class="empty">Waiting for scores...</div>';
+                return;
+            }
+            
+            const html = Object.entries(scores).map(([key, value]) => {
+                const numValue = parseFloat(value) || 0;
+                const percent = Math.min(100, (numValue / 10) * 100);
+                const className = numValue >= 7 ? 'good' : numValue >= 5 ? 'medium' : 'bad';
+                
+                return `
+                    <div class="score-item ${className}">
+                        <div class="score-label">${key.replace(/_/g, ' ')}</div>
+                        <div class="score-value">${numValue.toFixed(1)}</div>
+                        <div class="score-bar"><div class="score-fill" style="width: ${percent}%"></div></div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+        
+        function updateDiff(oldPrompt, newPrompt) {
+            const container = document.getElementById('diff');
+            if (!oldPrompt || !newPrompt) {
+                container.innerHTML = '<div class="empty">No changes</div>';
+                return;
+            }
+            
+            // Simple character-level diff
+            const oldLines = oldPrompt.split('\n');
+            const newLines = newPrompt.split('\n');
+            
+            let html = '';
+            const maxLines = Math.max(oldLines.length, newLines.length);
+            
+            for (let i = 0; i < maxLines; i++) {
+                const oldLine = oldLines[i] || '';
+                const newLine = newLines[i] || '';
+                
+                if (oldLine === newLine) {
+                    html += `<div class="diff-line diff-context">  ${escapeHtml(oldLine)}</div>`;
+                } else {
+                    if (oldLine) {
+                        html += `<div class="diff-line diff-remove">- ${escapeHtml(oldLine)}</div>`;
+                    }
+                    if (newLine) {
+                        html += `<div class="diff-line diff-add">+ ${escapeHtml(newLine)}</div>`;
+                    }
+                }
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        function updateIterations() {
+            const container = document.getElementById('iterations');
+            if (iterations.length === 0) {
+                container.innerHTML = '<div class="empty">Starting loop...</div>';
+                return;
+            }
+            
+            const html = iterations.map(iter => {
+                const icon = iter.status === 'running' ? '<span class="spinner"></span>' :
+                            iter.status === 'passed' ? '✅' : '❌';
+                const score = iter.scores ? 
+                    ((iter.scores.avg || iter.scores.average || 0).toFixed(1)) : 
+                    '—';
+                
+                return `
+                    <div class="iteration-item ${iter.status}">
+                        <div class="iteration-num">${icon} Iteration ${iter.num}/5</div>
+                        <div>Score: ${score}</div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = html;
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // On load, check if loop is running
+        window.addEventListener('load', () => {
+            fetch('/loop/status')
+                .then(res => res.json())
+                .then(data => {
+                    console.log('Status:', data);
+                    if (data.status === 'running') {
+                        updateStatus('running', '🟢 Running');
+                        connectStream();
+                    }
+                })
+                .catch(err => console.error('Status check failed:', err));
+        });
+    </script>
+</body>
+</html>

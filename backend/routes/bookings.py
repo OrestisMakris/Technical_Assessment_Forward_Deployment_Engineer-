@@ -91,6 +91,7 @@ def _row_to_booking(row, conn) -> BookingOut:
         extras=[
             ExtraOut(
                 id=e["id"],
+                booking_ref=e["booking_ref"],
                 item_type=e["item_type"],
                 description=e["description"],
                 fee_gbp=e["fee_gbp"],
@@ -100,6 +101,7 @@ def _row_to_booking(row, conn) -> BookingOut:
         assistance=[
             AssistanceOut(
                 id=a["id"],
+                booking_ref=a["booking_ref"],
                 assistance_code=a["assistance_code"],
                 notes=a["notes"],
                 confirmed=bool(a["confirmed"]),

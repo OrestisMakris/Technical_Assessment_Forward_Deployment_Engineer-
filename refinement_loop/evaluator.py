@@ -160,7 +160,7 @@ def evaluate(
     resp = model.generate_content(
         user_msg,
         generation_config=genai.types.GenerationConfig(
-            max_output_tokens=1024,
+            max_output_tokens=2048,  # INCREASED from 1024 to prevent truncation
         ),
     )
 
@@ -171,7 +171,62 @@ def evaluate(
             raw = raw[4:]
     raw = raw.strip()
 
-    data = json.loads(raw)
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as e:
+        logger.error("Failed to parse Gemini evaluation response: %s", e)
+        logger.error("Raw response (first 500 chars): %s", raw[:500])
+        
+        # FALLBACK: Try to extract valid JSON from partial response
+        logger.info("Attempting to recover from truncated JSON...")
+        try:
+            # Find last complete object
+            if raw.count('{') > raw.count('}'):
+                # Response was cut off mid-object, try to close it
+                open_braces = raw.count('{') - raw.count('}')
+                raw_fixed = raw + '}' * open_braces
+                data = json.loads(raw_fixed)
+                logger.info("✅ Successfully recovered truncated JSON")
+            else:
+                raise
+        except json.JSONDecodeError as e2:
+            logger.error("Failed to recover truncated JSON: %s", e2)
+            # Return default low scores if parsing fails
+            return EvaluationResult(
+                scenario_id=transcript.scenario_id,
+                iteration=iteration,
+                scores=[
+                    CriterionScore(
+                        name="understanding",
+                        score=0.0,
+                        rationale="Evaluation parsing failed",
+                        failure_quote="",
+                    ),
+                    CriterionScore(
+                        name="api_usage",
+                        score=0.0,
+                        rationale="Evaluation parsing failed",
+                        failure_quote="",
+                    ),
+                    CriterionScore(
+                        name="confirmation",
+                        score=0.0,
+                        rationale="Evaluation parsing failed",
+                        failure_quote="",
+                    ),
+                    CriterionScore(
+                        name="naturalness",
+                        score=0.0,
+                        rationale="Evaluation parsing failed",
+                        failure_quote="",
+                    ),
+                ],
+                root_cause=RootCause.NONE,
+                root_cause_explanation="Could not parse Gemini evaluation response",
+                faulty_file=None,
+                faulty_behaviour=None,
+            )
+
 
     scores = []
     for name in ("understanding", "api_usage", "confirmation", "naturalness"):

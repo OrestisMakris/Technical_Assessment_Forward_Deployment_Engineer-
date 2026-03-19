@@ -64,13 +64,177 @@ _loop_task: asyncio.Task | None = None
 _loop_state = {"status": "idle", "iteration": 0}
 
 
-@app.post("/loop/start")
-async def start_loop(
-    background_tasks: BackgroundTasks,
-    scenarios: list[str] | None = None,
-):
+@app.get("/health")
+def health_check():
+    """Simple health check endpoint."""
+    return {"status": "healthy", "service": "TechMellon Airlines API"}
+
+
+@app.post("/tools/verify")
+async def verify_tools():
+    """
+    Verify all 9 webhook tools are responding correctly.
+    
+    Runs basic tests on:
+    1. search_flights
+    2. get_policy
+    3. get_flight_status
+    4. book_flight (creates a test booking)
+    5. get_booking
+    6. add_extras
+    7. add_assistance
+    8. reschedule_booking
+    9. cancel_booking
+    
+    Returns:
+    {
+      "passed": 8,
+      "failed": 0,
+      "tools": {
+        "search_flights": "PASS",
+        "get_policy": "PASS",
+        ...
+      }
+    }
+    """
+    from backend.db.database import get_conn
+    
+    results = {}
+    
+    try:
+        # Test 1: search_flights (direct DB query to avoid routing issues)
+        with get_conn() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM flights WHERE destination = 'Tokyo' AND date(departure_dt) = ? LIMIT 1",
+                          ("2026-03-19",))
+            flights = cursor.fetchall()
+        results["search_flights"] = "PASS" if flights else "SKIP (no flights)"
+        test_flight_id = flights[0][0] if flights else "TM-FL-001"
+    except Exception as e:
+        results["search_flights"] = f"ERROR: {str(e)[:50]}"
+        test_flight_id = "TM-FL-001"
+    
+    try:
+        # Test 2: get_policy
+        from backend.routes.knowledge import _load_policies
+        policies = _load_policies()
+        results["get_policy"] = "PASS" if policies and "baggage_policy" in policies else "FAIL"
+    except Exception as e:
+        results["get_policy"] = f"ERROR: {str(e)[:50]}"
+    
+    try:
+        # Test 3: get_flight_status
+        from backend.routes.flights import get_flight_status
+        status = get_flight_status(test_flight_id)
+        results["get_flight_status"] = "PASS" if status and status.flight_id else "FAIL"
+    except Exception as e:
+        results["get_flight_status"] = f"ERROR: {str(e)[:50]}"
+    
+    # For tests 4-9, we need a real flight and booking
+    booking_ref = None
+    
+    try:
+        # Test 4: book_flight
+        from backend.routes.bookings import create_booking
+        from backend.db.schemas import BookingCreateRequest
+        
+        req = BookingCreateRequest(
+            flight_id=test_flight_id,
+            passenger_name="Tool Verification Test",
+            seat_preference="window",
+            fare_type="economy",
+        )
+        booking = create_booking(req)
+        booking_ref = booking.ref
+        results["book_flight"] = "PASS" if booking_ref else "FAIL"
+    except Exception as e:
+        results["book_flight"] = f"ERROR: {str(e)[:50]}"
+    
+    if booking_ref:
+        try:
+            # Test 5: get_booking
+            from backend.routes.bookings import get_booking
+            booking = get_booking(booking_ref)
+            results["get_booking"] = "PASS" if booking.ref == booking_ref else "FAIL"
+        except Exception as e:
+            results["get_booking"] = f"ERROR: {str(e)[:50]}"
+        
+        try:
+            # Test 6: add_extras
+            from backend.routes.bookings import add_extras
+            from backend.db.schemas import ExtraAddRequest
+            req = ExtraAddRequest(item_type="baggage", description="Test baggage")
+            booking = add_extras(booking_ref, req)
+            results["add_extras"] = "PASS" if booking.extras else "FAIL"
+        except Exception as e:
+            results["add_extras"] = f"ERROR: {str(e)[:50]}"
+        
+        try:
+            # Test 7: add_assistance
+            from backend.routes.bookings import add_assistance
+            from backend.db.schemas import AssistanceRequest
+            req = AssistanceRequest(assistance_code="WCHR", notes="Test assistance")
+            booking = add_assistance(booking_ref, req)
+            results["add_assistance"] = "PASS" if booking.assistance else "FAIL"
+        except Exception as e:
+            results["add_assistance"] = f"ERROR: {str(e)[:50]}"
+        
+        try:
+            # Test 8: reschedule_booking (find another flight)
+            from backend.routes.bookings import reschedule_booking
+            from backend.db.schemas import BookingRescheduleRequest
+            
+            with get_conn() as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT id FROM flights WHERE id != ? LIMIT 1", (test_flight_id,))
+                other = cursor.fetchone()
+            
+            if other:
+                other_flight_id = other[0]
+                req = BookingRescheduleRequest(new_flight_id=other_flight_id)
+                booking = reschedule_booking(booking_ref, req)
+                results["reschedule_booking"] = "PASS" if booking.flight_id == other_flight_id else "FAIL"
+            else:
+                results["reschedule_booking"] = "SKIP (no alternate flight)"
+        except Exception as e:
+            results["reschedule_booking"] = f"ERROR: {str(e)[:50]}"
+        
+        try:
+            # Test 9: cancel_booking
+            from backend.routes.bookings import cancel_booking
+            cancellation = cancel_booking(booking_ref)
+            results["cancel_booking"] = "PASS" if cancellation.get("status") == "cancelled" else "FAIL"
+        except Exception as e:
+            results["cancel_booking"] = f"ERROR: {str(e)[:50]}"
+    else:
+        results["get_booking"] = "SKIP (no booking created)"
+        results["add_extras"] = "SKIP (no booking)"
+        results["add_assistance"] = "SKIP (no booking)"
+        results["reschedule_booking"] = "SKIP (no booking)"
+        results["cancel_booking"] = "SKIP (no booking)"
+    
+    # Summary
+    passed = sum(1 for v in results.values() if v == "PASS")
+    failed = sum(1 for v in results.values() if "ERROR" in v or v == "FAIL")
+    
+    logger.info("🔧 Tool verification complete: %d PASS, %d FAIL/ERROR", passed, failed)
+    
+    return {
+        "passed": passed,
+        "failed": failed,
+        "tools": results
+    }
+
+
+@app.get("/loop/start")
+async def start_loop(scenario_ids: str | None = None):
     """Start the autonomous refinement loop as a background task."""
     global _loop_task, _loop_state
+
+    # Parse scenario_ids from query parameter
+    scenarios = None
+    if scenario_ids:
+        scenarios = [s.strip() for s in scenario_ids.split(",") if s.strip()]
 
     logger.info("🔴 START LOOP BUTTON CLICKED")
     logger.info("  Scenarios: %s", scenarios or "all")

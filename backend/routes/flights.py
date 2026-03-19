@@ -32,6 +32,8 @@ def search_flights(
     destination: Optional[str] = Query(None),
     origin: Optional[str] = Query("London"),
     date: Optional[str] = Query(None, description="YYYY-MM-DD"),
+    min_price: Optional[float] = Query(None, description="Minimum price in GBP"),
+    max_price: Optional[float] = Query(None, description="Maximum price in GBP"),
     cheapest: bool = Query(False, description="Return only the single cheapest flight"),
     seat_class: Optional[str] = Query(None),
 ):
@@ -62,6 +64,14 @@ def search_flights(
     if seat_class:
         sql += " AND LOWER(seat_class) = LOWER(?)"
         params.append(seat_class)
+
+    if min_price is not None:
+        sql += " AND price_gbp >= ?"
+        params.append(min_price)
+
+    if max_price is not None:
+        sql += " AND price_gbp <= ?"
+        params.append(max_price)
 
     sql += " ORDER BY price_gbp ASC"
 

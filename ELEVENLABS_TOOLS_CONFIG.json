@@ -1,0 +1,202 @@
+{
+  "tools": [
+    {
+      "tool_name": "search_flights",
+      "description": "Search for available flights based on criteria like destination, date, and seat class. Returns list of available flights with prices and times.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "destination": {
+            "type": "string",
+            "description": "Destination city or code (e.g., 'Tokyo', 'TYO', 'Paris')"
+          },
+          "date": {
+            "type": "string",
+            "description": "Travel date in YYYY-MM-DD format (optional)"
+          },
+          "seat_class": {
+            "type": "string",
+            "description": "Seat class: 'economy', 'business', or 'first' (optional, defaults to economy)"
+          }
+        },
+        "required": ["destination"]
+      },
+      "webhook": {
+        "url": "https://semiacidified-pansophistically-charmain.ngrok-free.dev/webhook/elevenlabs",
+        "method": "POST"
+      }
+    },
+    {
+      "tool_name": "book_flight",
+      "description": "Book a flight for a customer. Requires flight ID, passenger name, and email. Returns booking confirmation with booking reference.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "flight_id": {
+            "type": "string",
+            "description": "ID of the flight to book"
+          },
+          "passenger_name": {
+            "type": "string",
+            "description": "Full name of the passenger"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email address of the passenger"
+          },
+          "seat_class": {
+            "type": "string",
+            "description": "Seat class: 'economy', 'business', or 'first' (optional)"
+          }
+        },
+        "required": ["flight_id", "passenger_name", "email"]
+      },
+      "webhook": {
+        "url": "https://semiacidified-pansophistically-charmain.ngrok-free.dev/webhook/elevenlabs",
+        "method": "POST"
+      }
+    },
+    {
+      "tool_name": "get_booking",
+      "description": "Retrieve booking details by booking reference number. Returns booking information including flight details, passenger info, and status.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "type": "string",
+            "description": "Booking reference number"
+          }
+        },
+        "required": ["ref"]
+      },
+      "webhook": {
+        "url": "https://semiacidified-pansophistically-charmain.ngrok-free.dev/webhook/elevenlabs",
+        "method": "POST"
+      }
+    },
+    {
+      "tool_name": "cancel_booking",
+      "description": "Cancel an existing booking. Returns refund amount and confirmation.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "type": "string",
+            "description": "Booking reference number to cancel"
+          }
+        },
+        "required": ["ref"]
+      },
+      "webhook": {
+        "url": "https://semiacidified-pansophistically-charmain.ngrok-free.dev/webhook/elevenlabs",
+        "method": "POST"
+      }
+    },
+    {
+      "tool_name": "reschedule_booking",
+      "description": "Reschedule a booking to a different flight. Returns new booking reference and any applicable fees.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "type": "string",
+            "description": "Current booking reference number"
+          },
+          "new_flight_id": {
+            "type": "string",
+            "description": "ID of the new flight to reschedule to"
+          }
+        },
+        "required": ["ref", "new_flight_id"]
+      },
+      "webhook": {
+        "url": "https://semiacidified-pansophistically-charmain.ngrok-free.dev/webhook/elevenlabs",
+        "method": "POST"
+      }
+    },
+    {
+      "tool_name": "add_extras",
+      "description": "Add extras like baggage, meals, or seat selection to an existing booking. Returns updated booking details.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "type": "string",
+            "description": "Booking reference number"
+          },
+          "extra_type": {
+            "type": "string",
+            "description": "Type of extra: 'baggage', 'meal', or 'seat_selection'"
+          },
+          "quantity": {
+            "type": "integer",
+            "description": "Quantity of the extra (optional, defaults to 1)"
+          }
+        },
+        "required": ["ref", "extra_type"]
+      },
+      "webhook": {
+        "url": "https://semiacidified-pansophistically-charmain.ngrok-free.dev/webhook/elevenlabs",
+        "method": "POST"
+      }
+    },
+    {
+      "tool_name": "add_assistance",
+      "description": "Add special assistance requests to a booking. Types include wheelchair, unaccompanied minor, or pet transport.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "type": "string",
+            "description": "Booking reference number"
+          },
+          "assistance_type": {
+            "type": "string",
+            "description": "Type of assistance: 'wheelchair', 'unaccompanied_minor', 'pet_transport', etc."
+          }
+        },
+        "required": ["ref", "assistance_type"]
+      },
+      "webhook": {
+        "url": "https://semiacidified-pansophistically-charmain.ngrok-free.dev/webhook/elevenlabs",
+        "method": "POST"
+      }
+    },
+    {
+      "tool_name": "get_flight_status",
+      "description": "Get the current status of a flight. Returns status (on-time, delayed, cancelled) and any relevant details.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "flight_id": {
+            "type": "string",
+            "description": "Flight ID to check status for"
+          }
+        },
+        "required": ["flight_id"]
+      },
+      "webhook": {
+        "url": "https://semiacidified-pansophistically-charmain.ngrok-free.dev/webhook/elevenlabs",
+        "method": "POST"
+      }
+    },
+    {
+      "tool_name": "get_policy",
+      "description": "Retrieve airline policies. Types include baggage, pet, cancellation, checkin, and special assistance policies.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "policy_type": {
+            "type": "string",
+            "description": "Type of policy: 'baggage', 'pet', 'cancellation', 'checkin', or 'assistance'"
+          }
+        },
+        "required": ["policy_type"]
+      },
+      "webhook": {
+        "url": "https://semiacidified-pansophistically-charmain.ngrok-free.dev/webhook/elevenlabs",
+        "method": "POST"
+      }
+    }
+  ]
+}

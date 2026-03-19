@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import ast
 import difflib
+import importlib
 import importlib.util
 import json
 import logging
@@ -229,6 +230,7 @@ def fix_code(
     filepath.write_text(patched_source, encoding="utf-8")
     logger.info("Code patch applied to %s (function: %s)", filepath, function_name)
 
+    _reload_patched_module(filepath)
     _reload_backend()
 
     return Fix(
@@ -318,6 +320,9 @@ def _reload_backend() -> None:
     Signal the uvicorn process to reload by sending SIGHUP.
     Falls back to no-op if process not found (tests / CI).
     """
+    # Best-effort process-level reload for Unix uvicorn processes.
+    # On Windows, `pgrep`/`SIGHUP` is unavailable; in-process module reload
+    # (performed above) is the primary mechanism.
     try:
         result = subprocess.run(
             ["pgrep", "-f", "uvicorn"],
@@ -327,8 +332,28 @@ def _reload_backend() -> None:
         for pid in pids:
             os.kill(int(pid), signal.SIGHUP)
             logger.info("Sent SIGHUP to uvicorn PID %s", pid)
+    except FileNotFoundError:
+        logger.info("pgrep not available; relying on in-process module reload")
     except Exception as exc:
         logger.warning("Could not reload backend: %s", exc)
+
+
+def _reload_patched_module(filepath: Path) -> None:
+    """Reload a patched backend module so next iteration uses updated code."""
+    try:
+        root = BACKEND_DIR.parent.resolve()
+        resolved = filepath.resolve()
+        if root not in resolved.parents and resolved != root:
+            return
+
+        rel = resolved.relative_to(root).with_suffix("")
+        module_name = ".".join(rel.parts)
+
+        if module_name in sys.modules:
+            importlib.reload(sys.modules[module_name])
+            logger.info("Reloaded patched module: %s", module_name)
+    except Exception as exc:
+        logger.warning("Could not reload patched module %s: %s", filepath, exc)
 
 
 # ── Orchestration ─────────────────────────────────────────────────────────────
