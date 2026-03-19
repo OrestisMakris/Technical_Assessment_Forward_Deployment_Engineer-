@@ -125,8 +125,10 @@ async def simulate(scenario: Scenario, system_prompt: str) -> Transcript:
 
     if not use_elevenlabs:
         from refinement_loop.elevenlabs_client import run_conversation_fallback
+        import anthropic
+        anthropic_client = anthropic.Anthropic()
         transcript = await run_conversation_fallback(
-            customer_utterances, system_prompt, _client
+            customer_utterances, system_prompt, anthropic_client
         )
 
     transcript.scenario_id = scenario.id
