@@ -102,6 +102,10 @@ async def run_loop_background(scenario_ids: list[str] | None = None) -> None:
     import logging
     logger = logging.getLogger("sse_bridge")
     
+    print("\n" + "=" * 100)
+    print("🚀🚀🚀 LOOP STARTING 🚀🚀🚀")
+    print("=" * 100 + "\n")
+    
     from refinement_loop.config import GOOGLE_CONFIGURED, ELEVENLABS_CONFIGURED
     
     logger.info("=" * 100)
@@ -109,6 +113,9 @@ async def run_loop_background(scenario_ids: list[str] | None = None) -> None:
     logger.info("   Google API: %s", "✅ configured" if GOOGLE_CONFIGURED else "❌ NOT configured")
     logger.info("   ElevenLabs: %s", "✅ configured" if ELEVENLABS_CONFIGURED else "❌ NOT configured")
     logger.info("=" * 100)
+    
+    print(f"✅ Google API: {GOOGLE_CONFIGURED}")
+    print(f"✅ ElevenLabs: {ELEVENLABS_CONFIGURED}\n")
     
     sse_manager.publish({"event": "log", "data": {"message": "🚀 Refinement loop starting..."}, "ts": _now()})
 
@@ -128,6 +135,7 @@ async def run_loop_background(scenario_ids: list[str] | None = None) -> None:
                     break
             except Exception as e:
                 logger.error("Error in relay task: %s", e, exc_info=True)
+                print(f"❌ RELAY ERROR: {e}")
                 break
 
     relay_task = asyncio.create_task(_relay())
@@ -135,28 +143,35 @@ async def run_loop_background(scenario_ids: list[str] | None = None) -> None:
     try:
         from refinement_loop.loop import RefinementLoop
         
-        if not GOOGLE_CONFIGURED or not ELEVENLABS_CONFIGURED:
-            logger.warning("⚠️  DEMO MODE: Missing API credentials")
-            logger.info("   - Skipping live agent simulation")
-            logger.info("   - Using mock data for evaluation")
-            sse_manager.publish({
-                "event": "warning", 
-                "data": {"message": "Running in DEMO MODE without live APIs. See console for details."}, 
-                "ts": _now()
-            })
-        
+        print("Creating loop instance...")
         loop = RefinementLoop(sse_queue=q, scenario_ids=scenario_ids)
+        print(f"✅ Loop created with {len(loop.scenarios)} scenarios")
+        
+        if not GOOGLE_CONFIGURED or not ELEVENLABS_CONFIGURED:
+            print("⚠️  RUNNING IN DEMO MODE (missing APIs)")
+            logger.warning("⚠️  DEMO MODE: Missing API credentials")
+        
+        print("\n🔄 Calling loop.run()...\n")
         result = await loop.run()
+        
+        print("\n✅✅✅ LOOP FINISHED SUCCESSFULLY ✅✅✅\n")
         logger.info("✅ Refinement loop completed successfully!")
         sse_manager.publish({"event": "log", "data": {"message": "✅ Loop completed!"}, "ts": _now()})
     except Exception as exc:
+        print(f"\n❌❌❌ LOOP FAILED ❌❌❌")
+        print(f"Exception: {exc}\n")
+        print("Full traceback:")
+        import traceback
+        traceback.print_exc()
+        
         logger.error("❌ Refinement loop failed: %s", exc, exc_info=True)
-        logger.error("Traceback:", exc_info=True)
         sse_manager.publish({"event": "log", "data": {"message": f"❌ Loop failed: {exc}"}, "ts": _now()})
         # Force the relay task to stop
-        q.put_nowait({"event": "loop_finished", "data": {"reason": "error"}, "ts": _now()})
+        q.put_nowait({"event": "loop_finished", "data": {"reason": "error", "error": str(exc)}, "ts": _now()})
     finally:
+        print("\n⏸️  Awaiting relay task...\n")
         await relay_task
+        print("✅ Relay task completed\n")
 
 
 def _now() -> str:

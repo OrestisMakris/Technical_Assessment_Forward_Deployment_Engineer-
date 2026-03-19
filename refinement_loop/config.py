@@ -38,11 +38,11 @@ if not ELEVENLABS_CONFIGURED:
     print("⚠️  WARNING: ELEVENLABS credentials not set — loop will run in FALLBACK MODE (no live agent)")
 
 # ── Models ───────────────────────────────────────────────────────────────────────
-# Gemini 1.5 Pro for customer sim and fixing (needs reasoning);
-# Gemini 1.5 Flash for cheaper evaluations if cost becomes an issue.
-CUSTOMER_MODEL: str = os.getenv("CUSTOMER_MODEL", "gemini-1.5-pro")
-EVALUATOR_MODEL: str = os.getenv("EVALUATOR_MODEL", "gemini-1.5-pro")
-FIXER_MODEL: str = os.getenv("FIXER_MODEL", "gemini-1.5-pro")
+# Using gemini-1.5-flash (widely available across all API tiers)
+# Faster, cheaper, and suitable for customer sim, evaluation, and fixing
+CUSTOMER_MODEL: str = os.getenv("CUSTOMER_MODEL", "gemini-1.5-flash")
+EVALUATOR_MODEL: str = os.getenv("EVALUATOR_MODEL", "gemini-1.5-flash")
+FIXER_MODEL: str = os.getenv("FIXER_MODEL", "gemini-1.5-flash")
 
 # ── Simulation ────────────────────────────────────────────────────────────────
 MAX_CONVERSATION_TURNS: int = int(os.getenv("MAX_CONVERSATION_TURNS", "12"))
