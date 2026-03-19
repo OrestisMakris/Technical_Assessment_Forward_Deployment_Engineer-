@@ -124,29 +124,89 @@ def get_policy(topic: str):
 # We dispatch to the appropriate business logic and return:
 #   { "result": <any JSON-serialisable value> }
 
+def _infer_tool_from_params(params: dict) -> str | None:
+    """
+    Infer tool name from parameter keys when tool_name is not provided.
+    Useful for ElevenLabs test tool which sends params directly.
+    """
+    if not params:
+        return None
+
+    param_keys = set(params.keys())
+    
+    # Tool signatures (parameter combinations)
+    signatures = {
+        "search_flights": {"destination", "date", "cheapest", "seat_class", "origin"},
+        "book_flight": {"flight_id", "passenger_name", "seat_preference"},
+        "get_booking": {"ref"},
+        "get_flight_status": {"flight_id"},
+        "cancel_booking": {"ref"},
+        "reschedule_booking": {"ref", "new_flight_id"},
+        "add_extras": {"ref", "item_type", "description"},
+        "add_assistance": {"ref", "assistance_code", "notes"},
+        "get_policy": {"topic"},
+    }
+    
+    # Find tool with matching parameter set (best match by overlap)
+    best_match = None
+    best_score = 0
+    
+    for tool, expected_params in signatures.items():
+        # Score based on overlap with expected parameters
+        overlap = len(param_keys & expected_params)
+        if overlap > best_score:
+            best_score = overlap
+            best_match = tool
+    
+    return best_match if best_score > 0 else None
+
+
 @webhook_router.post("/elevenlabs")
 async def elevenlabs_webhook(request: Request) -> JSONResponse:
     """
     Central dispatcher for all ElevenLabs tool calls.
     Maps tool_name → handler function.
+    Handles multiple payload formats from ElevenLabs.
     """
     try:
         body = await request.json()
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid JSON body.")
 
-    tool_name: str = body.get("tool_name", "")
-    params: dict = body.get("parameters", {})
+    # ElevenLabs can send tool_name in multiple ways:
+    # 1. {"tool_name": "...", "parameters": {...}}
+    # 2. {"tool_call": {"tool_name": "...", "parameters": {...}}}
+    # 3. {parameters directly at root} - from ElevenLabs test tool
+    tool_call = body.get("tool_call", {})
+    tool_name: str = body.get("tool_name") or tool_call.get("tool_name", "")
+    params: dict = body.get("parameters") or tool_call.get("parameters", {})
+    
+    # If params not found in standard locations, check if params are at root level
+    if not params and not tool_name:
+        # Try to infer from root-level keys (include all keys, even empty ones)
+        params = {k: v for k, v in body.items() if k not in ["tool_name", "tool_call", "parameters"]}
+        tool_name = _infer_tool_from_params(params) or ""
+        logger.info("Inferred from root params: tool=%s, keys=%s", tool_name, list(params.keys()))
 
-    logger.info("ElevenLabs webhook: tool=%s params=%s", tool_name, params)
+    # Filter out empty string parameters to avoid "match all" behavior in SQL LIKE queries
+    params_cleaned = {k: v for k, v in params.items() if v not in ("", None)}
+    
+    logger.info("ElevenLabs webhook received: %s", body)
+    logger.info("ElevenLabs webhook: tool=%s raw_params=%s cleaned_params=%s", tool_name, params, params_cleaned)
 
     handler = _TOOL_DISPATCH.get(tool_name)
     if handler is None:
+        if not tool_name:
+            logger.error("❌ Could not determine tool_name from payload.")
+            logger.error("📖 Ensure tool_name is in payload or configure tools in ElevenLabs.")
+            return JSONResponse({
+                "result": "ERROR: Could not determine which tool to call. Please configure tools in ElevenLabs agent. See ELEVENLABS_AGENT_CONFIG.md."
+            }, status_code=200)
         logger.warning("Unknown tool: %s", tool_name)
         return JSONResponse({"result": f"Tool '{tool_name}' is not available."}, status_code=200)
 
     try:
-        result = await handler(params)
+        result = await handler(params_cleaned)
         return JSONResponse({"result": result})
     except HTTPException as exc:
         return JSONResponse({"result": {"error": exc.detail}}, status_code=200)

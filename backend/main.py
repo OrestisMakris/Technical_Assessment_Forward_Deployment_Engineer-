@@ -20,6 +20,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from backend.db.database import init_db
 from backend.routes.flights import router as flights_router
@@ -125,10 +126,9 @@ async def loop_stream(request: Request):
     )
 
 
-@app.get("/")
-def root():
-    return {
-        "service": "TechMellon Airlines API",
-        "docs": "/docs",
-        "loop_stream": "/loop/stream",
-    }
+# ── Serve static files (observer UI) ──────────────────────────────────────────
+
+from pathlib import Path
+
+static_dir = Path(__file__).parent / "static"
+app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")

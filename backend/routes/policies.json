@@ -1,0 +1,429 @@
+{
+  "pet_policy": {
+    "summary": "Pets are permitted on TechMellon Airlines flights subject to the conditions below.",
+    "cabin": {
+      "permitted": true,
+      "eligible_animals": ["cat", "dog", "small rabbit"],
+      "max_weight_kg": 8,
+      "weight_includes_carrier": true,
+      "carrier_max_dimensions_cm": "45 × 30 × 25 (L × W × H)",
+      "carrier_must_fit_under_seat": true,
+      "max_pets_per_passenger": 1,
+      "max_pets_per_flight": 4,
+      "fee_gbp": 50,
+      "booking_required": true,
+      "advance_notice_hours": 48,
+      "notes": "The carrier must be well-ventilated and the pet must remain inside at all times."
+    },
+    "hold": {
+      "permitted": true,
+      "eligible_animals": ["cat", "dog", "small rabbit"],
+      "max_weight_kg_including_crate": 32,
+      "crate_requirements": "IATA-approved travel crate with food and water dispensers",
+      "fee_gbp": 120,
+      "booking_required": true,
+      "advance_notice_hours": 72,
+      "health_certificate_required": true,
+      "notes": "Hold pet spaces are limited to 2 per flight. Snub-nosed breeds are not accepted in the hold on flights over 4 hours."
+    },
+    "not_permitted": ["reptiles", "birds", "rodents other than rabbits", "exotic animals"],
+    "routes_excluded": ["all transatlantic routes"],
+    "service_animals": {
+      "permitted_in_cabin": true,
+      "fee": 0,
+      "documentation_required": true,
+      "advance_notice_hours": 48,
+      "notes": "Recognised guide dogs and assistance dogs travel free in the cabin. Documentation from a registered assistance dog organisation required."
+    }
+  },
+
+  "baggage_policy": {
+    "cabin_bag": {
+      "economy": {
+        "dimensions_cm": "56 × 45 × 25",
+        "max_weight_kg": 10,
+        "quantity": 1,
+        "personal_item_allowed": true,
+        "personal_item_dimensions_cm": "40 × 30 × 15"
+      },
+      "business": {
+        "dimensions_cm": "56 × 45 × 25",
+        "max_weight_kg": 12,
+        "quantity": 1,
+        "personal_item_allowed": true,
+        "personal_item_dimensions_cm": "40 × 30 × 15"
+      },
+      "first": {
+        "dimensions_cm": "56 × 45 × 25",
+        "max_weight_kg": 14,
+        "quantity": 2,
+        "personal_item_allowed": true,
+        "personal_item_dimensions_cm": "40 × 30 × 15"
+      }
+    },
+    "checked_bag": {
+      "economy": {
+        "included_bags": 1,
+        "included_weight_kg": 23,
+        "max_weight_per_bag_kg": 32,
+        "max_dimensions_cm": "90 × 75 × 43",
+        "first_extra_bag_fee_gbp": 35,
+        "second_extra_bag_fee_gbp": 50,
+        "excess_weight_fee_per_kg_gbp": 12
+      },
+      "business": {
+        "included_bags": 2,
+        "included_weight_kg": 32,
+        "max_weight_per_bag_kg": 32,
+        "max_dimensions_cm": "90 × 75 × 43",
+        "first_extra_bag_fee_gbp": 25,
+        "second_extra_bag_fee_gbp": 35,
+        "excess_weight_fee_per_kg_gbp": 0
+      },
+      "first": {
+        "included_bags": 3,
+        "included_weight_kg": 32,
+        "max_weight_per_bag_kg": 32,
+        "max_dimensions_cm": "90 × 75 × 43",
+        "first_extra_bag_fee_gbp": 0,
+        "second_extra_bag_fee_gbp": 0,
+        "excess_weight_fee_per_kg_gbp": 0
+      }
+    },
+    "special_items": {
+      "pram_pushchair": {
+        "fee_gbp": 20,
+        "notes": "One pram per booking accepted. Folded dimensions must not exceed 120 × 60 × 40 cm."
+      },
+      "sports_equipment": {
+        "bicycle_fee_gbp": 60,
+        "ski_snowboard_fee_gbp": 45,
+        "golf_bag_fee_gbp": 40,
+        "surfboard_fee_gbp": 75,
+        "notes": "Must be declared at booking. Bicycles must have pedals removed and handlebars turned."
+      },
+      "musical_instruments": {
+        "small_cabin_fee_gbp": 0,
+        "large_hold_fee_gbp": 60,
+        "notes": "Instruments over 56 × 45 × 25 cm must be checked in the hold."
+      }
+    },
+    "delayed_or_lost_baggage": {
+      "report_within_hours": 24,
+      "report_location": "Baggage Services desk at arrivals or baggage.techmellon.com",
+      "delayed_compensation_per_day_gbp": 50,
+      "delayed_compensation_max_gbp": 300,
+      "lost_compensation_max_gbp": 1300,
+      "lost_declared_after_days": 21,
+      "notes": "Keep all receipts for essential purchases while bag is delayed. Original receipts required for reimbursement."
+    },
+    "prohibited_items": {
+      "cabin_prohibited": [
+        "firearms and ammunition",
+        "knives and sharp objects over 6cm",
+        "flammable liquids",
+        "compressed gases",
+        "lithium batteries over 100Wh without prior approval",
+        "liquids over 100ml unless purchased airside"
+      ],
+      "hold_prohibited": [
+        "loose lithium batteries",
+        "e-cigarettes and vaping devices",
+        "flammable perfumes over 500ml",
+        "matches and lighters"
+      ]
+    }
+  },
+
+  "checkin_policy": {
+    "online_checkin": {
+      "opens_hours_before_departure": 24,
+      "closes_hours_before_departure": 2,
+      "url": "https://checkin.techmellon.com"
+    },
+    "airport_checkin": {
+      "opens_hours_before_departure": 3,
+      "closes_hours_before_departure": 1
+    },
+    "bag_drop": {
+      "closes_minutes_before_departure": 60
+    },
+    "gate_closes_minutes_before_departure": 30,
+    "boarding_starts_minutes_before_departure": 45,
+    "priority_boarding": {
+      "eligible": ["first class", "business class", "La Casa Gold and above", "passengers with reduced mobility", "families with children under 5"],
+      "boards_minutes_before_standard": 10
+    },
+    "notes": "Passengers with special assistance should arrive at least 2 hours before departure and notify staff at check-in."
+  },
+
+  "cancellation_refund_policy": {
+    "flexible_fare": {
+      "cancellation_allowed": true,
+      "refund_percentage": 100,
+      "refund_timeline_business_days": "5-7",
+      "change_fee_gbp": 0,
+      "notes": "Full refund to original payment method. Ancillary fees (bags, seats) also refunded."
+    },
+    "standard_fare": {
+      "cancellation_allowed": true,
+      "refund_percentage": 0,
+      "refund_timeline_business_days": null,
+      "change_fee_gbp": 60,
+      "notes": "Ticket value converted to travel credit valid 12 months. No cash refund. Change fee applies per passenger."
+    },
+    "cancellation_by_airline": {
+      "refund_percentage": 100,
+      "alternative_flight_offered": true,
+      "compensation_eu261": true,
+      "notes": "If TechMellon cancels the flight, full refund plus EU261 compensation applies where applicable."
+    },
+    "no_show_policy": {
+      "refund": false,
+      "credit": false,
+      "notes": "Passengers who do not check in and do not contact us forfeit the full ticket value regardless of fare type."
+    },
+    "name_change_policy": {
+      "allowed": true,
+      "fee_gbp": 40,
+      "deadline_hours_before_departure": 24,
+      "notes": "One spelling correction is free of charge within 24 hours of booking."
+    }
+  },
+
+  "special_assistance": {
+    "wheelchair_codes": {
+      "WCHR": {
+        "description": "Passenger can walk up stairs but needs wheelchair for long distances in terminal",
+        "service": "Wheelchair from check-in to aircraft door"
+      },
+      "WCHS": {
+        "description": "Passenger cannot walk up stairs but can move short distances",
+        "service": "Wheelchair throughout terminal and lifted up/down aircraft steps"
+      },
+      "WCHC": {
+        "description": "Passenger is completely immobile and must be carried to seat",
+        "service": "Full assistance from kerb to seat, aisle wheelchair on board"
+      }
+    },
+    "other_codes": {
+      "BLND": "Assistance for visually impaired passengers, including guidance through terminal",
+      "DEAF": "Assistance for hearing impaired passengers, including visual boarding alerts",
+      "DPNA": "Assistance for passengers with intellectual or developmental disabilities",
+      "MEDA": "Medical clearance required — passenger travelling with a medical condition"
+    },
+    "advance_notice_hours": 48,
+    "check_in_requirement": "Passengers requiring WCHC assistance must check in at least 90 minutes before departure.",
+    "aisle_wheelchair": "Available on all aircraft. Request via WCHC code.",
+    "oxygen": {
+      "personal_oxygen_concentrators": "Permitted on board. Must be FAA/EASA approved. Battery must last 150% of flight duration.",
+      "airline_oxygen": "Not available. Passengers must arrange their own supply."
+    },
+    "notes": "All assistance is free of charge. Service dogs are permitted in cabin free of charge with advance notice."
+  },
+
+  "infant_and_child_policy": {
+    "infant": {
+      "definition": "Under 2 years old",
+      "lap_infant_fee_gbp": 35,
+      "lap_infant_fee_long_haul_gbp": 75,
+      "max_infants_per_adult": 1,
+      "bassinet_available": true,
+      "bassinet_note": "Bassinet seats are bulkhead rows. Request at booking — subject to availability.",
+      "equipment_allowed_free": ["collapsible pushchair", "car seat", "baby bag"]
+    },
+    "child": {
+      "definition": "2 to 11 years old",
+      "fare": "Full adult fare applies",
+      "notes": "Children must be seated next to an accompanying adult."
+    },
+    "unaccompanied_minor": {
+      "eligible_age_range": "5 to 14 years",
+      "fee_gbp": 60,
+      "service_includes": "Escorted from check-in to seat, met at destination by named adult",
+      "required_documentation": "UM form, ID of accompanying adult at departure and collection, emergency contact details",
+      "advance_notice_hours": 48,
+      "not_available_on": ["connecting flights", "last flight of the day"]
+    }
+  },
+
+  "seat_policy": {
+    "seat_selection": {
+      "economy_standard_fee_gbp": 8,
+      "economy_extra_legroom_fee_gbp": 22,
+      "economy_exit_row_fee_gbp": 28,
+      "business_fee_gbp": 0,
+      "first_fee_gbp": 0,
+      "free_at_checkin": "Standard seats are available free of charge at online check-in 24 hours before departure."
+    },
+    "seat_types": {
+      "window": "Seats A and F on most aircraft",
+      "aisle": "Seats C and D on short-haul, C and G on long-haul",
+      "middle": "Seat B on short-haul, D and E on long-haul",
+      "extra_legroom": "Rows 1 to 3 and exit rows. Minimum 6 inches additional legroom.",
+      "exit_row_restrictions": "Passengers must be 15 or older, able-bodied, and willing to assist in an emergency. Not suitable for passengers travelling with infants."
+    },
+    "upgrade_policy": {
+      "bid_upgrade_available": true,
+      "bid_opens_hours_before_departure": 72,
+      "points_upgrade_available": true,
+      "notes": "La Casa members can bid for upgrades or use loyalty points at techmellon.com/manage."
+    }
+  },
+
+  "loyalty_program": {
+    "name": "La Casa",
+    "tiers": {
+      "Blue": {
+        "entry_requirement": "Default tier on joining",
+        "points_per_gbp_spent": 1,
+        "benefits": ["member fares", "points on all flights"]
+      },
+      "Silver": {
+        "entry_requirement": "4000 tier points in a calendar year",
+        "points_per_gbp_spent": 1.25,
+        "benefits": ["priority check-in", "one free seat selection", "extra 3kg baggage allowance"]
+      },
+      "Gold": {
+        "entry_requirement": "8000 tier points in a calendar year",
+        "points_per_gbp_spent": 1.5,
+        "benefits": ["lounge access", "priority boarding", "one free upgrade per year", "dedicated phone line"]
+      },
+      "Platinum": {
+        "entry_requirement": "15000 tier points in a calendar year",
+        "points_per_gbp_spent": 2,
+        "benefits": ["unlimited lounge access including a guest", "guaranteed upgrade on long-haul", "dedicated concierge", "complimentary chauffeur"]
+      }
+    },
+    "redemption": {
+      "flight_redemption": "Points can be redeemed against any flight at techmellon.com/manage",
+      "minimum_redemption_points": 1000,
+      "points_to_gbp_rate": "1000 points equals £10 discount",
+      "expiry": "Points expire after 24 months of account inactivity"
+    }
+  },
+
+  "meal_and_onboard_policy": {
+    "economy": {
+      "short_haul_under_2h": "Snacks and beverages available for purchase",
+      "short_haul_2_to_4h": "Complimentary snack and soft drink",
+      "long_haul_over_4h": "Full meal service included. Choice of two options."
+    },
+    "business": "Multi-course meal with wine list on all flights over 1.5 hours.",
+    "first": "Chef-designed menu with sommelier-selected wines. Pre-order available 72 hours before departure.",
+    "special_meals": {
+      "available": true,
+      "options": [
+        "VGML - vegan",
+        "VLML - vegetarian",
+        "HNML - Hindu",
+        "MOML - Muslim halal",
+        "KSML - kosher",
+        "DBML - diabetic",
+        "GFML - gluten free",
+        "LFML - low fat",
+        "LSML - low salt",
+        "CHML - child meal"
+      ],
+      "request_deadline_hours_before_departure": 24,
+      "notes": "Special meals must be requested at booking or no later than 24 hours before departure."
+    },
+    "alcohol": "Complimentary in business and first. Available for purchase in economy on flights over 2 hours. Not served to passengers who appear intoxicated."
+  },
+
+  "travel_documents_policy": {
+    "general": "Passengers are responsible for ensuring they hold valid travel documents for their destination.",
+    "passport": "Must be valid for at least 6 months beyond the date of travel for most destinations.",
+    "visa": "TechMellon does not provide visa advice. Check with the embassy or consulate of your destination country.",
+    "esta_etias": "US-bound passengers from visa-waiver countries require ESTA. EU-bound non-EU nationals may require ETIAS.",
+    "name_matching": "The name on your ticket must exactly match the name on your passport or travel document.",
+    "id_domestic": "Photo ID required for all domestic check-ins — passport, driving licence, or national ID card.",
+    "denied_boarding_for_documents": "TechMellon is not liable for costs incurred if a passenger is denied boarding due to inadequate travel documents."
+  },
+
+  "flight_disruption_policy": {
+    "delay_under_2h": {
+      "refreshments": false,
+      "compensation": false
+    },
+    "delay_2_to_4h": {
+      "refreshments": true,
+      "compensation": false,
+      "rebooking_offered": false
+    },
+    "delay_over_4h": {
+      "refreshments": true,
+      "meal_voucher": true,
+      "compensation_eu261_eligible": true,
+      "rebooking_offered": true,
+      "hotel_if_overnight": true
+    },
+    "cancellation": {
+      "full_refund": true,
+      "rebooking_offered": true,
+      "compensation_eu261_eligible": true
+    },
+    "eu261_compensation": {
+      "under_1500km_gbp": 220,
+      "between_1500_and_3500km_gbp": 350,
+      "over_3500km_gbp": 520,
+      "notes": "EU261 applies to flights departing from EU/UK airports, or arriving into EU/UK on an EU/UK carrier. Not payable for extraordinary circumstances such as severe weather or ATC strikes."
+    },
+    "contact_during_disruption": "Disruption support: 0800 123 4567 (freephone UK) or disruptions@techmellon.com"
+  },
+
+  "payment_policy": {
+    "accepted_methods": ["Visa", "Mastercard", "American Express", "Apple Pay", "Google Pay", "PayPal", "La Casa points"],
+    "currency": "GBP primary. Prices shown in local currency where applicable.",
+    "price_guarantee": "Prices are guaranteed once payment is confirmed.",
+    "booking_fee": "No booking fee on techmellon.com. Third-party booking sites may charge additional fees.",
+    "fraud_prevention": "Additional verification may be required for high-value bookings."
+  },
+
+  "group_booking_policy": {
+    "definition": "10 or more passengers travelling together on the same flight",
+    "benefits": [
+      "dedicated group fare",
+      "flexible name changes up to 7 days before departure",
+      "seated together subject to availability",
+      "one free group leader seat"
+    ],
+    "deposit_required_percent": 20,
+    "final_payment_deadline_days_before": 60,
+    "contact": "groups@techmellon.com or +44 20 1234 5678",
+    "notes": "Group bookings cannot be made online. Contact the groups desk directly."
+  },
+
+  "medical_fitness_policy": {
+    "general": "Passengers with serious medical conditions should consult their doctor before flying.",
+    "meda_clearance": {
+      "required_for": [
+        "passengers who have had surgery in the past 10 days",
+        "passengers with infectious diseases",
+        "passengers requiring medical equipment on board",
+        "passengers who may be unable to sit upright for the duration of the flight"
+      ],
+      "process": "Complete a MEDIF form at techmellon.com/medical. Allow 5 working days for clearance.",
+      "contact": "medicaldesk@techmellon.com"
+    },
+    "pregnancy": {
+      "permitted_up_to_weeks": 36,
+      "after_28_weeks_requires": "Medical certificate confirming fitness to fly and expected due date, dated within 10 days of travel",
+      "multiple_pregnancy_permitted_up_to_weeks": 32
+    },
+    "recent_surgery": "Passengers who have had surgery within 10 days must obtain MEDA clearance before flying.",
+    "diving": "Passengers should not fly within 24 hours of scuba diving."
+  },
+
+  "environmental_policy": {
+    "carbon_offsetting": {
+      "available": true,
+      "opt_in_at_booking": true,
+      "cost_per_short_haul_flight_gbp": 3,
+      "cost_per_long_haul_flight_gbp": 12,
+      "partner": "Gold Standard certified projects"
+    },
+    "sustainable_aviation_fuel": "TechMellon blends 5% SAF across its fuel supply, targeting 10% by 2030.",
+    "single_use_plastics": "Eliminated from cabin service since 2023. All onboard packaging is recyclable or compostable."
+  }
+}

@@ -6,6 +6,10 @@ interviewer can adjust them with a single edit.
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # ── Termination ──────────────────────────────────────────────────────────────
 MAX_ITERATIONS: int = int(os.getenv("MAX_ITERATIONS", "5"))
@@ -20,9 +24,17 @@ BACKEND_DIR = ROOT_DIR / "backend"
 SYSTEM_PROMPT_FILE = PROMPTS_DIR / "system_prompt.txt"
 
 # ── API keys ──────────────────────────────────────────────────────────────────
-GOOGLE_API_KEY: str = os.environ["GOOGLE_API_KEY"]
-ELEVENLABS_API_KEY: str = os.environ["ELEVENLABS_API_KEY"]
-ELEVENLABS_AGENT_ID: str = os.environ["ELEVENLABS_AGENT_ID"]
+GOOGLE_API_KEY: str = os.getenv("GOOGLE_API_KEY", "")
+ELEVENLABS_API_KEY: str = os.getenv("ELEVENLABS_API_KEY", "")
+ELEVENLABS_AGENT_ID: str = os.getenv("ELEVENLABS_AGENT_ID", "")
+
+# Validate that required API keys are set
+if not GOOGLE_API_KEY:
+    raise ValueError("❌ GOOGLE_API_KEY not set in .env file")
+if not ELEVENLABS_API_KEY:
+    raise ValueError("❌ ELEVENLABS_API_KEY not set in .env file")
+if not ELEVENLABS_AGENT_ID:
+    raise ValueError("❌ ELEVENLABS_AGENT_ID not set in .env file")
 
 # ── Models ───────────────────────────────────────────────────────────────────────
 # Gemini 1.5 Pro for customer sim and fixing (needs reasoning);
